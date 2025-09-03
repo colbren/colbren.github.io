@@ -1,7 +1,7 @@
 ---
 layout: project
 type: project
-image: img/robot_swarm.jpg
+image: img/robot_swarm.JPG
 title: "Robot Swarm"
 date: 2025-01-13
 published: true
@@ -14,7 +14,7 @@ summary: "I developed a test platform using physical robots to test swarm satell
 ---
 
 <div class="text-center p-4">
-  <img width="1000px" src="../img/micromouse/robot_swarm_poster.png" class="img-thumbnail" >
+  <img width="1000px" src="../img/robot_swarm_poster.jpg" class="img-thumbnail" >
 </div>
 
 I created a testbed using AlphaBot2-Pi robots to simulate autonomous satellite swarm coordination, enabling early-stage validation of swarm formation control algorithms. To get accurate movements, postional and orientation feedback, I implemented an AHRS with Madgwick filtering and sensor fused UWB and IMU data, enabling real-time orientation tracking within 10° and position accuracy within 10 cm.

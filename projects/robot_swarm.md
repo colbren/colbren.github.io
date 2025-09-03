@@ -21,6 +21,4 @@ I created a testbed using AlphaBot2-Pi robots to simulate autonomous satellite s
 
 The localization and control for AlphaBot2-Pi robots was developed in python while the swarm controller and formation control algorithm was developed in C++. Position and orientation feedback was sent back to the controller through UDP.
 
-```
-
 You can check out my poster at the [2025 SmallSat Proceedings](https://digitalcommons.usu.edu/smallsat/2025/all2025/73/).

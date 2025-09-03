@@ -17,8 +17,8 @@ summary: "As Software Lead for Team Robotic Space Exploration (RoSE), I develope
 ---
 
 <div class="text-center p-4">
-  <img width="500px" src="../img/rose_localization.jpg" class="img-thumbnail" >
-  <img width="500px" src="../img/rose_detection.jpg" class="img-thumbnail" >
+  <img width="500px" src="../img/ground_station_gui.png" class="img-thumbnail" >
+  <img width="500px" src="../img/foxglove_studio.png" class="img-thumbnail" >
 </div>
 
 **Project overview.** Team Robotic Space Exploration (RoSE) is a student-led organization at the University of Hawaii that designs and builds autonomous rovers for simulated planetary exploration. Our rover was tasked with navigating unstructured terrain, detecting and localizing objects, and completing competition objectives with minimal human intervention. To succeed, the system required robust localization, perception, and planning pipelines that could adapt to uncertain and dynamic environments while maintaining real-time performance.

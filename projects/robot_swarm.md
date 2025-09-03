@@ -14,9 +14,7 @@ summary: "I developed a test platform using physical robots to test swarm satell
 ---
 
 <div class="text-center p-4">
-  <img width="200px" src="../img/micromouse/micromouse-robot.png" class="img-thumbnail" >
-  <img width="200px" src="../img/micromouse/micromouse-robot-2.jpg" class="img-thumbnail" >
-  <img width="200px" src="../img/micromouse/micromouse-circuit.png" class="img-thumbnail" >
+  <img width="1000px" src="../img/micromouse/robot_swarm_poster.png" class="img-thumbnail" >
 </div>
 
 I created a testbed using AlphaBot2-Pi robots to simulate autonomous satellite swarm coordination, enabling early-stage validation of swarm formation control algorithms. To get accurate movements, postional and orientation feedback, I implemented an AHRS with Madgwick filtering and sensor fused UWB and IMU data, enabling real-time orientation tracking within 10° and position accuracy within 10 cm.
@@ -25,4 +23,4 @@ The localization and control for AlphaBot2-Pi robots was developed in python whi
 
 ```
 
-You can learn more at the [2025 SmallSat Proceedings](https://digitalcommons.usu.edu/smallsat/2025/all2025/73/).
+You can check out my poster at the [2025 SmallSat Proceedings](https://digitalcommons.usu.edu/smallsat/2025/all2025/73/).

@@ -25,19 +25,19 @@
   "skills": [
     {
       "name": "Languages and Frameworks",
-      "keywords": [ "C", "C++", "Java", "Javascript", "Assembly", "Common Lisp" ]
+      "keywords": [ "C", "C++", "Java", "Javascript", "Python"]
     },
     {
       "name": "Toolsets/OS",
-      "keywords": [ "MacOS", "Ubuntu", "Git/GitHub", "g++", "TI LaunchPad" ]
+      "keywords": [ "MacOS", "Ubuntu", "Git/GitHub", "g++", "ROS", "Windows"]
     }
   ],
   "education": [
     {
       "institution": "University of Hawaii, Honolulu, HI",
-      "area": "Computer Science (expected Spring, 2018)",
+      "area": "Computer Engineering (expected Spring, 2026)",
       "studyType": "B.S.",
-      "startDate": "2013-09-01",
+      "startDate": "2023-09-01",
       "endDate": "Present",
       "courses": [
       ]
@@ -45,69 +45,71 @@
   ],
   "work": [
     {
-      "company": "UH Manoa Board of Publications",
-      "position": "Web Developer",
-      "website": "",
-      "startDate": "2015-08-01",
+      "company": "Hawaii Space Flight Laboratory",
+      "position": "Satellite Software Engineer",
+      "website": "https://www.hsfl.hawaii.edu/",
+      "startDate": "2024-11-01",
       "endDate": "Present",
-      "summary": "Head of online presence for Ka Leo",
+      "summary": "Develop real-time embedded software for NASA-contracted satellite missions",
       "highlights": [
-        "Maintain, update, and oversee official college newspaper website",
-        "Drive, design and build student-community projects for UH Manoa"
+        "Developed real-time embedded software in C++ for NASA-contracted satellite missions, including control interfaces for EPS and ADCS",
+        "Created a testbed using AlphaBot2-Pi robots to simulate autonomous satellite swarm coordination, enabling early-stage validation of swarm formation control algorithms",
+        "Implemented an AHRS with Madgwick filtering and sensor fused UWB and IMU data, enabling real-time orientation tracking within 10° and position accuracy within 10 cm on AlphaBot2-Pi robots"
       ]
     },
     {
-      "company": "UH Information Technology Services",
-      "position": "Help Desk Consultant",
-      "website": "http://www.hawaii.edu/its/",
-      "startDate": "2015-01-01",
-      "endDate": "2016-03-15",
-      "summary": "",
+      "company": "University of Hawaii at Manoa",
+      "position": "AI Research Assistant",
+      "website": "",
+      "startDate": "2025-01-13",
+      "endDate": "Present",
+      "summary": "Medical diagnostics and vision-language model safety under Dr. Liuwan Zhu, focusing on large language model evaluation for lung cancer detection and geolocation privacy defenses",
       "highlights": [
-        "Troubleshoot software, hardware and networking issues over the phone",
-        "Answer phone and email responses to the ITS Help Desk"
+        "Utilized Dino, SAM2, and PixelSHAP to quantify the importance of individual geolocation cues in images interpreted by OpenAI’s o3 model, leading to the creation of an automated counterfactual defense framework that obscures sensitive visual features",
+        "Fine-tuned model parameters using tree-based feature importance and trained on specialized datasets to evaluate large language model performance for lung cancer detection using a random forest classifier"
+      ]
+    },
+    {
+      "company": "Robotic Space Exploration",
+      "position": "GNC Lead Software Developer",
+      "website": "",
+      "startDate": "2023-11-01",
+      "endDate": "Present",
+      "summary": "Worked on autonomous navigation, computer vision, and ground station of rover simulating mars missions",
+      "highlights": [
+        "Fused RTK GNSS and IMU data via EKF to enhance GPS coordinate accuracy from ~3 m to ~10 cm",
+        "Developed a ROS–Qt monitoring interface for real-time rover health/status, lifecycle node management, and sensor/trajectory visualization",
+        "Designed a SLAM-based path planner to optimize shortest-path navigation while avoiding obstacles, increasing exploration coverage efficiency by ~40%",
+        "Utilized YOLOv8 for object detection and ARUCO marker tracking for robust real-time computer vision in dynamic environments for reliable object localization"
       ]
     }
   ],
   "volunteer": [
     {
-      "organization": "Center for Renewable Energy and Island Sustainability",
-      "website": "http://manoa.hawaii.edu/reis",
-      "position": "Software Developer",
-      "startDate": "2016-01-01",
-      "endDate": "Present",
+      "organization": "Mililani Science Learning Center",
+      "website": "",
+      "position": "STEM Camp Lead",
+      "startDate": "2019-10-01",
+      "endDate": "2023-10-30",
       "summary": "Lead developer for weather sensing project",
       "highlights": [
-        "Design firmware for distributed weather sensor network",
-        "Maintain custom data collection and storage infrastructure"
+        "Lead in providing mentorship for 3rd to 5th-grade students developing fundamental design principles and problem-solving skills through the engineering design process",
+        "Created the curriculum for a LEGO Mindstorms EV3 robotics camp; designed engaging engineering-related activities and challenges"
       ]
     },
-    {
-      "organization": "",
-      "website": "",
-      "position": "Professional organization involvement",
-      "startDate": "",
-      "endDate": "",
-      "summary": "",
-      "highlights": [
-        "Chair, ACM Manoa, 2016-Present",
-        "Member, IEEE Student Branch, 2014-Present",
-        "Webmaster/IT Officer, IEEE Student Branch, UH Manoa, 2012-2013"
-      ]
-    }
   ],
   "awards": [
     {
-      "title": "B+ Scholarship",
-      "date": "2013-Present",
-      "awarder": "State of Hawaii",
-      "summary": "Scholarships awarded to incoming freshmen and continuing students who complete a rigorous high school curriculum with a minimum overall GPA of 3.0 at a Hawai'i public school."
+      "title": "Dean's List",
+      "date": "2023-Present",
+      "awarder": "University of Hawaii at Manoa",
+      "summary": "Earned a UH Manoa semester grade point average of 3.5 or higher"
     },
     {
-      "title": "First place",
-      "date": "2015",
-      "awarder": "University of Hawaii Micromouse Competition",
-      "summary": "My team won first place in 2015.  See my portfolio site for more details."
+      "title": "Academic Scholarship",
+      "date": "2023",
+      "awarder": "University of Hawaii at Manoa",
+      "summary": "Scholarships awarded to incoming freshmen and continuing students who complete a rigorous high school curriculum with a minimum overall GPA of 3.5 at a Hawai'i public school."
     }
   ],
   "references": [

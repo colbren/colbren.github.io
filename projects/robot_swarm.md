@@ -1,7 +1,7 @@
 ---
 layout: project
 type: project
-image: img/robot_swarm.JPG
+image: img/robot_swarm.jpg
 title: "Robot Swarm"
 date: 2025-01-13
 published: true

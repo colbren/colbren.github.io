@@ -16,8 +16,8 @@ summary: "I used PixelSHAP defense that uses DINO features and SAM2 segmentation
 ---
 
 <div class="text-center p-4">
-  <img width="500px" src="../img/pixel_shap_segmentation.jpg" class="img-thumbnail" >
-  <img width="500px" src="../img/pixel_shap_importance.jpg" class="img-thumbnail" >
+  <img width="500px" src="../img/pixel_shap_segmentation.png" class="img-thumbnail" >
+  <img width="500px" src="../img/pixel_shap_importance.png" class="img-thumbnail" >
 </div>
 
 **Project overview.** GeoShield is a privacy-preserving pipeline that measures and mitigates geolocation leakage from images. I combined **DINO** feature embeddings, **SAM2** segmentation, and **PixelSHAP** attributions to quantify the importance of *fine-grained visual cues* (e.g., distinctive skylines, storefront typography, vegetation patterns, transit signage) that a vision(-language) model uses to infer location. Guided by those importance scores, GeoShield generates **counterfactual edits** that selectively obscure high-risk regions—via blurring, inpainting, or texture substitution—while preserving overall scene semantics and downstream utility. The result is an *automated*, data-driven defense that substantially reduces geolocation confidence for models like **OpenAI’s o3** without rendering images unusable.

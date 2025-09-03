@@ -25,12 +25,15 @@ The sensor fusion was implemented using an EKF node within ROS2, which required 
 
 <img width="200px" class="rounded float-start pe-4" src="../img/GNSS_L1L2_Antenna.png">
 
+<br><br>
+
 ## ROS2 Lifecycle Node Integration
 One of my first assignments this semester involved working with ROS2 lifecycle nodes. ROS2 introduced lifecycle nodes to help manage the state of a node in a more controlled and safe manner which would especially be useful for our ground station. Unlike standard ROS2 nodes, lifecycle nodes support well-defined states such as unconfigured, inactive, active, and finalized. This was especially relevant for our ground station, where we previously had to rely on manually launching and killing nodes using terminal commands.
 I began by researching ROS2 lifecycle node APIs and examining pre-existing code found in the ROS2 tutorials for lifecycle nodes. After gaining a solid understanding, I refactored a number of our existing ROS2 nodes to adopt this lifecycle model. This included the usb_camera node running on a Raspberry Pi. Previously, this node required a hard manual shutdown using Ctrl+C, which was not plausible with multiple nodes running on the ground station. Therefore, I redefined this node to transition cleanly between states, allowing it to be started, paused, or shut down programmatically from the ground station GUI.
 Integrating lifecycle support not only improved safety and modularity but also allowed us to add a clean startup and shutdown procedure. This was crucial during field tests, where improper shutdowns could cause hangs, device locks, or data corruption. The ability to cycle nodes through different lifecycle states also set the foundation for better fault recovery, system health checks, and future support for autonomous fault tolerance.
 
 <img width="200px" class="rounded float-start pe-4" src="../img/lifecycle_flow_model.png">
+<br><br>
 
 ## Ground Station GUI Development and Automation
 This semester saw significant improvements in our ground station GUI, which I had begun developing in previous semesters using the Qt framework. Initially a proof-of-concept, the GUI is now an integral part of the operator workflow, supporting real-time telemetry monitoring, process control, and system feedback.
@@ -38,6 +41,7 @@ My first enhancement was the implementation of a launch manager within the GUI. 
 Additionally, I implemented SSH-based remote launch capabilities. This allowed us to trigger ROS2 nodes or scripts on remote computers, such as Raspberry Pis mounted on the rover, from the ground station interface. The SSH interface used passwordless public key authentication and executed startup commands on the remote device, enabling us to manage a distributed ROS2 system from one central GUI.
 
 <img width="200px" class="rounded float-start pe-4" src="../img/ground_station_gui.png">
+<br><br>
 
 ## Foxglove Studio for Visualization and Debugging
 To further enhance our system’s observability, I introduced Foxglove Studio which is a powerful platform for real-time data visualization and analysis. It provides a modern interface for inspecting topics, services, and messages in a ROS2 environment.
@@ -45,6 +49,7 @@ I installed and configured the Foxglove bridge node, which acts as a WebSocket i
 Foxglove proved invaluable for debugging. In the future, I plan to integrate Foxglove more tightly with the ground station GUI, allowing users to launch it directly from the interface or toggle key visualizations based on mission phase.
 
 <img width="200px" class="rounded float-start pe-4" src="../img/foxglove_studio.png">
+<br><br>
 
 ## Conclusions and Future Plans
 This semester, I gained hands-on experience with industry-standard software engineering tools and practice. I learned how to break complex problems into manageable tasks, validate through testing, and write maintainable code in a collaborative environment. I also got better at communicating technical details with team members across subteams, ensuring our software aligned with broader project goals. 

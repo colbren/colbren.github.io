@@ -4,7 +4,7 @@ type: essay
 title: "Team RoSE Final Report"
 # All dates must be YYYY-MM-DD format!
 date: 2025-05-09
-published: true
+published: false
 labels:
   - Engineering
 ---

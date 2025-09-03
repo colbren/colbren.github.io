@@ -1,54 +1,53 @@
 ---
 layout: essay
 type: essay
-title: "Team RoSE Final Report"
-# All dates must be YYYY-MM-DD format!
+title: "New Mars Rover on the Way!"
 date: 2025-05-09
-published: false
+published: True
 labels:
-  - Engineering
+  - Embedded Systems
+  - ROS
+  - Robotics
 ---
 
-## Summary
+## The Mission: Build a Better Rover  
 
-In my third semester on Team Robotic Space Exploration (RoSE) as a member of the Guidance, Navigation, and Control (GNC) subteam, I contributed to improving the functionality of our robot, mainly the ground station graphical user interface and localization. This semester, I focused on implementing ROS2 lifecycle nodes, enhancing the ground station GUI for better usability, finalizing our high-precision localization using RTK fused with IMU data through an Extended Kalman Filter, and integrating Foxglove Studio for better observability of camera feeds and data analysis of ROS2 data. Each of these tasks offered its own challenges and learning opportunities, and have significantly improved both the capabilities of our robot and my skills as an engineer. This report details my contributions and lessons learned over the Spring 2025 semester as a part of Team RoSE.
+Every robotics project starts with a bold promise, and for Team Robotic Space Exploration (RoSE), it’s the dream of building a rover that could one day survive the Red Planet. Of course, before you conquer Mars, you need to conquer the field outside the engineering building. This semester, I was deep in the trenches of the Guidance, Navigation, and Control (GNC) subteam, tackling everything from localization and real-time data fusion to software lifecycle management. My job was to make sure our rover not only knew where it was, but could also talk to us clearly, start up cleanly, and keep us in the loop when things went wrong.  
+
+The challenge? Robots don’t like uncertainty, but the real world is full of it. GNSS dropouts, IMU drift, processes that don’t shut down when you tell them to — they all conspire against you. My semester became about finding ways to make the rover more precise, more robust, and a whole lot friendlier to the humans operating it.  
 
 <img width="200px" class="rounded float-start pe-4" src="../img/zed_f9p.png">
-
 <img width="200px" class="rounded float-start pe-4" src="../img/BNO0855_imu.png">
+<img width="220px" class="rounded float-start pe-4" src="../img/GNSS_L1L2_Antenna.png">
+## When GPS Isn’t Enough  
 
-<img width="200px" class="rounded float-start pe-4" src="../img/GNSS_L1L2_Antenna.png">
-## Localization Enhancement with RTK and IMU Sensor Fusion
+We started with localization. On paper, RTK GNSS (using the ZED-F9P modules and L1/L2 antennas) promised centimeter-level accuracy — a dream for rover navigation. In practice, satellites hide behind trees, multipath reflections scramble your signals, and suddenly your “precise” position is off by a meter or more. That’s when we realized the rover needed more than just GPS; it needed a second set of eyes.  
 
-Accurate localization is essential for autonomous robotics, and our team’s efforts to improve it continued this semester. Building on the initial Real-Time Kinematics (RTK) work from previous terms, I finalized our localization system that fuses GNSS data from ZED-F9P modules (shown in figure 1) with the BNO055 (shown in figure 2) IMU data using an Extended Kalman Filter (EKF). To receive GNSS signals, we combined each ZED-F9P module with a L1/L2 antenna (shown in figure 3)
-We configured one ZED-F9P as a base station and the other on our rover as the receiver, enabling ~10 centimeter-level positioning accuracy. While RTK alone offers impressive positional data, it’s prone to occasional signal dropout or multipath errors. To make our localization system robust to such issues, I integrated IMU data (accelerometer and gyroscope) to estimate the rover's position and orientation.
-The sensor fusion was implemented using an EKF node within ROS2, which required careful tuning of parameters such as process noise, measurement noise, and initial covariance. We performed several field tests to evaluate the fused solution. The results showed that the system maintained accurate pose estimates even during temporary RTK dropouts or GNSS signal degradation. 
+Enter the IMU. I fused the ZED-F9P data with readings from our BNO055 IMU using an Extended Kalman Filter running inside ROS2. This was not plug-and-play — it meant carefully tuning process noise, measurement noise, and covariance matrices until the rover’s estimates stopped “drifting into the void.” After a few late nights of field testing (and watching the rover zigzag around like it had too much coffee), we got the fusion working. The result: reliable orientation within ~10° and position accuracy within 10 cm, even during RTK hiccups.  
 
 <img width="200px" class="rounded float-start pe-4" src="../img/lifecycle_flow_model.png">
+## Herding ROS2 Nodes  
 
-## ROS2 Lifecycle Node Integration
-One of my first assignments this semester involved working with ROS2 lifecycle nodes. ROS2 introduced lifecycle nodes to help manage the state of a node in a more controlled and safe manner which would especially be useful for our ground station. Unlike standard ROS2 nodes, lifecycle nodes support well-defined states such as unconfigured, inactive, active, and finalized. This was especially relevant for our ground station, where we previously had to rely on manually launching and killing nodes using terminal commands.
-I began by researching ROS2 lifecycle node APIs and examining pre-existing code found in the ROS2 tutorials for lifecycle nodes. After gaining a solid understanding, I refactored a number of our existing ROS2 nodes to adopt this lifecycle model. This included the usb_camera node running on a Raspberry Pi. Previously, this node required a hard manual shutdown using Ctrl+C, which was not plausible with multiple nodes running on the ground station. Therefore, I redefined this node to transition cleanly between states, allowing it to be started, paused, or shut down programmatically from the ground station GUI.
-Integrating lifecycle support not only improved safety and modularity but also allowed us to add a clean startup and shutdown procedure. This was crucial during field tests, where improper shutdowns could cause hangs, device locks, or data corruption. The ability to cycle nodes through different lifecycle states also set the foundation for better fault recovery, system health checks, and future support for autonomous fault tolerance.
+But localization was just one part of the battle. Our software system had grown into a jungle of ROS2 nodes, each with its own quirks. Shutting them down often meant playing “Ctrl+C roulette,” hoping nothing locked up or corrupted logs. That’s when I discovered ROS2 lifecycle nodes.  
+
+Think of lifecycle nodes as giving your code a set of manners. Instead of barging in and crashing out, they move gracefully between states: unconfigured, inactive, active, and finalized. I refactored some of our most problematic nodes, like the usb_camera running on a Pi, into lifecycle nodes. Now, instead of yanking the plug, we could politely tell a node to pause, restart, or bow out completely. This wasn’t just cleaner — it saved us from countless headaches in the field.  
 
 <img width="200px" class="rounded float-start pe-4" src="../img/ground_station_gui.png">
+## A Ground Station That Actually Helps  
 
-## Ground Station GUI Development and Automation
-This semester saw significant improvements in our ground station GUI, which I had begun developing in previous semesters using the Qt framework. Initially a proof-of-concept, the GUI is now an integral part of the operator workflow, supporting real-time telemetry monitoring, process control, and system feedback.
-My first enhancement was the implementation of a launch manager within the GUI. I added logic to allow users to launch entire ROS2 packages or specific nodes with a single button click. Each button was tied to launch files using subprocess management in Python, and the GUI was updated to provide visual feedback via text logs on the success or failure of each command.
-Additionally, I implemented SSH-based remote launch capabilities. This allowed us to trigger ROS2 nodes or scripts on remote computers, such as Raspberry Pis mounted on the rover, from the ground station interface. The SSH interface used passwordless public key authentication and executed startup commands on the remote device, enabling us to manage a distributed ROS2 system from one central GUI.
+Of course, all this backend work doesn’t matter if the human operators are fighting the interface. Our ground station GUI, which I’ve been building in Qt, became my personal playground for usability. This semester, I gave it a launch manager — one button could now spin up an entire ROS2 package instead of forcing students to copy-paste launch commands from a wiki.  
+
+I also added SSH remote launches, letting us control rover-mounted Pis from the GUI. With a couple clicks, we could start camera streams, navigation stacks, or sensor drivers without ever opening a terminal. During testing, this meant less time typing and more time watching the rover actually explore.  
 
 <img width="200px" class="rounded float-start pe-4" src="../img/foxglove_studio.png">
+## Seeing Through Foxglove  
 
-## Foxglove Studio for Visualization and Debugging
-To further enhance our system’s observability, I introduced Foxglove Studio which is a powerful platform for real-time data visualization and analysis. It provides a modern interface for inspecting topics, services, and messages in a ROS2 environment.
-I installed and configured the Foxglove bridge node, which acts as a WebSocket interface between ROS2 topics and the Foxglove Studio client. Once this was running, we could visualize data such as live camera feeds, IMU readings, GPS coordinates, and EKF pose estimates.
-Foxglove proved invaluable for debugging. In the future, I plan to integrate Foxglove more tightly with the ground station GUI, allowing users to launch it directly from the interface or toggle key visualizations based on mission phase.
+Finally, I integrated Foxglove Studio. If RViz feels like old-school cockpit gauges, Foxglove is like slipping on a VR headset: polished, real-time, and built for exploration. By bridging ROS2 topics into Foxglove, we could visualize live camera feeds, GNSS fixes, IMU orientation, and EKF estimates in one dashboard. Debugging went from staring at raw numbers to watching a slick visual replay of the rover’s every move.  
 
-## Conclusions and Future Plans
-This semester, I gained hands-on experience with industry-standard software engineering tools and practice. I learned how to break complex problems into manageable tasks, validate through testing, and write maintainable code in a collaborative environment. I also got better at communicating technical details with team members across subteams, ensuring our software aligned with broader project goals. 
-Looking ahead, I plan to build on this semester’s foundation by tackling more advanced tasks. One major area I want to explore is building a mission control framework using ROS2’s lifecycle and parameter servers. This system would coordinate all subsystem nodes like localization, navigation, communication, and telemetry with a central state machine, improving fault tolerance and mission reliability.
-Additionally, I aim to enhance the ground station GUI by adding features such as:
-Map view with GNSS overlays and planned trajectory
-EKF diagnostics panel showing sensor health and fusion confidence
-In the future, I hope to continue contributing to making Team RoSE’s software more autonomous, scalable, and user-friendly as a part of the GNC subteam. I also hope to improve my communication and collaboration skills as a lead to contribute to a better team environment and gain professional industry skills.
+## What I Took Away  
+
+Looking back, this semester was less about any single feature and more about building resilience — for the rover and for myself as an engineer. I learned that real robots don’t care about your perfect simulations; they’ll happily break your assumptions until you design for the messy, unpredictable world they live in.  
+
+I also learned the value of good interfaces, both for humans and machines. A rover that gracefully shuts down its nodes, keeps its operators informed, and delivers trustworthy localization isn’t just technically impressive — it’s usable. And that’s what matters when you’re trying to get a team of stressed-out students through a field test at 2 a.m.  
+
+Next up? Expanding our mission control framework so lifecycle nodes, parameter servers, and the GUI work together like a true ground-to-space system. Because one day, this rover might not just be rolling across a lawn in Hawai‘i — it could be part of something that rolls across Mars.  

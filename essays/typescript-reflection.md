@@ -12,10 +12,11 @@ labels:
 ## Discovering TypeScript
 Before starting this module, I had no prior experience using TypeScript. I mainly used Python and C++ in previous programming projects working with hardware for robotics applications. At first, it seemed like TypeScript was fairly similar to that of C++ in terms of writing functions and syntax. For the first WODs, I found myself defaulting to writing in C++ syntax and having to search up how to properly define functions and variables:
 
-<img width="200px" class="rounded float-start pe-4" src="../img/WOD1.png">
+<img width="750px" class="rounded float-start pe-4" src="../img/WOD1.png">
+
+<hr>
 
 ## TypeScript Through a Software Engineering Lens
-
 I think TypeScipt is a good level up from JavaScript as it addresses the lack of type safety. When reading about the differences, I found out that bugs may appear at runtime in JavaScript, but could be caught earlier in the compilier if you instead used TypeScript. Looking at these differeneces and having worked on multiple file projects in C++ and Python, I now better understand how different languages offer more or less flexibility and safety depending on the use case of the software. For me, at least in the beginning, I found that TypeScript had a realtively large learning curve and had more steps to writing code than Python and even C++ at times when doing the WODs which were similar problems I had solved in different languages.
 
 ## Athletic Software Engineering: WODs

@@ -14,7 +14,7 @@ Before starting this module, I had no prior experience using TypeScript. I mainl
 
 <img width="750px" class="rounded float-start pe-4" src="../img/WOD1.png">
 
-<hr>
+<div style="clear: both;"></div>
 
 ## TypeScript Through a Software Engineering Lens
 I think TypeScipt is a good level up from JavaScript as it addresses the lack of type safety. When reading about the differences, I found out that bugs may appear at runtime in JavaScript, but could be caught earlier in the compilier if you instead used TypeScript. Looking at these differeneces and having worked on multiple file projects in C++ and Python, I now better understand how different languages offer more or less flexibility and safety depending on the use case of the software. For me, at least in the beginning, I found that TypeScript had a realtively large learning curve and had more steps to writing code than Python and even C++ at times when doing the WODs which were similar problems I had solved in different languages.

@@ -30,4 +30,7 @@ summary: "As Software Lead for Team Robotic Space Exploration (RoSE), I develope
 - **User Interface:** Developed a Qt-based UI to monitor rover status, manage ROS2 lifecycle nodes, and visualize sensor data, streamlining testing and operator oversight.  
 - **Team Leadership:** Organized sprint goals, coordinated with mechanical and electrical teams, and led integration standups to manage cross-disciplinary dependencies and ensure alignment with project milestones.  
 
-**What I learned:** Leading RoSE’s GNC subteam was as much about systems engineering and collaboration as it was about coding. I learned how to integrate diverse technologies—sensor fusion, SLAM, and vision—into a cohesive real-time autonomy stack, and how to balance accuracy with efficiency in resource-constrained environments. More importantly, I discovered the value of interdisciplinary teamwork: effective communication, expectation management, and agile planning were critical to overcoming hard
+**What I learned:** Leading RoSE’s GNC subteam was as much about systems engineering and collaboration as it was about coding. I learned how to integrate diverse technologies—sensor fusion, SLAM, and vision—into a cohesive real-time autonomy stack, and how to balance accuracy with efficiency in resource-constrained environments. More importantly, I discovered the value of interdisciplinary teamwork: effective communication, expectation management, and agile planning were critical to overcoming hard.
+
+2024 source code is not avaiable to the public yet.
+[2023 source code](https://github.com/RoboticSpaceExploration/urc_gnc_autonav_ws)

@@ -3,7 +3,7 @@ layout: essay
 type: essay
 title: "New Mars Rover on the Way!"
 date: 2025-05-09
-published: True
+published: False
 labels:
   - Embedded Systems
   - ROS

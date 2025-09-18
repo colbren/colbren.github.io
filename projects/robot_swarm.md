@@ -14,7 +14,7 @@ summary: "I developed a test platform using physical robots to test swarm satell
 ---
 
 <div class="text-center p-4">
-  <img width="1000px" src="../img/robot_swarm_poster.jpg" class="img-thumbnail" >
+  <img width="=800px" src="../img/robot_swarm_poster.jpg" class="img-thumbnail" >
 </div>
 
 **Project overview:** I designed and implemented a testbed using AlphaBot2-Pi robots to simulate autonomous satellite swarm coordination, providing a low-cost and flexible platform for validating swarm formation control algorithms prior to deployment in higher-risk environments. The system was intended to replicate multi-agent coordination challenges—such as maintaining geometric formations, adapting to disturbances, and achieving consensus behaviors—using ground robots as stand-ins for spacecraft. To achieve reliable localization, I implemented an Attitude and Heading Reference System (AHRS) with Madgwick filtering and fused Ultra-Wideband (UWB) and IMU data. This approach enabled orientation tracking within 10° and position accuracy within 10 cm, making the testbed sufficiently accurate for evaluating swarm strategies at scale.

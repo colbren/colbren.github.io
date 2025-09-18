@@ -6,7 +6,7 @@
     "email": "colbren@hawaii.edu",
     "phone": "808-219-2079",
     "website": "https://colbren.github.io",
-    "summary": "I am studying for a B.S. in Computer Engineering in the College of Engineering at the University of Hawaii. I expect to graduate in Spring, 2026.",
+    "summary": "I am studying for a B.S. in Computer Engineering in the College of Engineering at the University of Hawaii. I expect to graduate in Spring, 2026. My current work involves robotic systems, satellites, and AI. I hope to work on embedded software for sensors on autonomous cars in the future.",
     "location": { "address": "", "postalCode": "96789", "city": "Honolulu", "countryCode": "USA", "region": "Hawaii" },
     "profiles": [
       { "network": "github", "username": "colbren", "url": "http://github.com/colbren" },

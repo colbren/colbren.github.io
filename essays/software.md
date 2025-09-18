@@ -23,8 +23,11 @@ Alongside this, I would also like to grow as a team engineer. Software is not ma
 ## Learning Through Experience
 I've learned that the best learning occurs by building. Personal projects, internships, or open-source work, I'd like to place myself in a situation where I'm fixing real issues for real users. Solving a quirky runtime exception or optimizing a slow query to run faster teaches things that no book can ever completely achieve. For example, one of the recent small projects I worked on was integrating third-party APIs, and I could see right away that documentation is never perfect--being flexible and persistent are skills worth their weight in gold in this line of work. I'm excited about continuing to work on embedded systems within the Robotic Space Exploration group where I integrate sensor data like GPS and IMU to get a better localization stack.
 
-<img width="200px" class="rounded float-start pe-4" src="../img/zed_f9p.png"> <img width="200px" class="rounded float-start pe-4" src="../img/BNO0855_imu.png"> <img width="220px" class="rounded float-start pe-4" src="../img/GNSS_L1L2_Antenna.png">
-
+<div class="d-flex gap-3 mb-3">
+  <img width="200px" class="rounded" src="../img/zed_f9p.png">
+  <img width="200px" class="rounded" src="../img/BNO0855_imu.png">
+  <img width="220px" class="rounded" src="../img/GNSS_L1L2_Antenna.png">
+</div>
 
 ## Looking Toward the Future
 In the end, I hope to be a general-purpose engineer with the capability to build systems from inception to completion, from design to deployment. I wish to do projects that impact--whether improving accessibility in everyday applications, expanding the scope of what robots can do through smarter embedded software, or building tools that help other developers become more productive. Software engineering is a field that rapidly evolves, and I know I will need to continue learning and adapting. That challenge interests me, because every new skill I master opens up the type of problem I can tackle.

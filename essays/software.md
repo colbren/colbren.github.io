@@ -25,5 +25,6 @@ I've learned that the best learning occurs by building. Personal projects, inter
 
 <img width="200px" class="rounded float-start pe-4" src="../img/zed_f9p.png"> <img width="200px" class="rounded float-start pe-4" src="../img/BNO0855_imu.png"> <img width="220px" class="rounded float-start pe-4" src="../img/GNSS_L1L2_Antenna.png">
 
+
 ## Looking Toward the Future
 In the end, I hope to be a general-purpose engineer with the capability to build systems from inception to completion, from design to deployment. I wish to do projects that impact--whether improving accessibility in everyday applications, expanding the scope of what robots can do through smarter embedded software, or building tools that help other developers become more productive. Software engineering is a field that rapidly evolves, and I know I will need to continue learning and adapting. That challenge interests me, because every new skill I master opens up the type of problem I can tackle.

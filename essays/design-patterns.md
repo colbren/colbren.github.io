@@ -11,14 +11,14 @@ labels:
   - Application Design
 ---
 
+## Finding the Paths in the Maze
+Building Manoa-Guesser sometimes felt like navigating the UH Mānoa campus for the first time. There are countless ways to get from one building to another, but only a handful of paths reliably get you where you need to go without confusion. In software engineering, those well-worn paths are called design patterns: proven ways of structuring code that developers return to again and again because they reduce complexity and increase clarity. They are not rigid rules or templates, but reusable mental blueprints for solving recurring problems in system design. When developers talk about design patterns, they are really talking about shared solutions, a common language that allows engineers to describe complex systems simply by saying, “This part behaves like a factory” or “That logic follows a strategy.”
+
 <img width="750px" class="rounded float-start pe-4" src="../img/design_patterns.png">
 
 <div style="clear: both;"></div>
 
 <hr>
-
-## Finding the Paths in the Maze
-Building Manoa-Guesser sometimes felt like navigating the UH Mānoa campus for the first time. There are countless ways to get from one building to another, but only a handful of paths reliably get you where you need to go without confusion. In software engineering, those well-worn paths are called design patterns: proven ways of structuring code that developers return to again and again because they reduce complexity and increase clarity. They are not rigid rules or templates, but reusable mental blueprints for solving recurring problems in system design. When developers talk about design patterns, they are really talking about shared solutions, a common language that allows engineers to describe complex systems simply by saying, “This part behaves like a factory” or “That logic follows a strategy.”
 
 ## When Patterns Start Appearing in Real Code
 As our project Manoa-Guesser evolved from a simple concept into a complete web application with authentication, persistent data, and dynamic gameplay, I began to notice these patterns emerging naturally. Our authentication system, implemented with NextAuth, resembles a Factory pattern. The credentials provider encapsulates the complicated logic of verifying a user and generating a session object, while the rest of the application receives a clean, consistent result without needing to understand the internal process. Like ordering from a restaurant kitchen, the client asks for a result and receives it—without ever needing to know how it was prepared.

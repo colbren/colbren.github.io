@@ -10,6 +10,12 @@ labels:
   - Final Project
 ---
 
+<img width="750px" class="rounded float-start pe-4" src="../img/estimation-process-techniques.png">
+
+<div style="clear: both;"></div>
+
+<hr>
+
 ## How I Made My Effort Estimates
 I made my initial effort estimates by breaking each issue into major subtasks such as UI implementation, backend integration, debugging, and testing. For example, when estimating work related to adding map functionality or improving the game page UI, I considered the number of components involved, the need to integrate third-party libraries (such as mapping APIs), and the expected debugging effort. My estimates were largely based on prior coursework experience with similar frontend and full-stack tasks rather than formal historical data. When similar features had already been implemented elsewhere in the project, I used those as informal reference points to approximate time requirements.
 

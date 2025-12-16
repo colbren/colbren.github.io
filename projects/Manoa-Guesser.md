@@ -38,8 +38,11 @@ Manoa Guesser helped bridge the gap between classroom exercises and real-world s
 
 ## Resource Links
 [Source Code](https://github.com/manoa-guesser/manoa-guesser)
+
 [GitHub Organization](https://github.com/manoa-guesser)
+
 [Live Deployment](https://manoa-guesser.vercel.app/)
+
 [Website Documentation](https://manoa-guesser.github.io/)
 
 ## Screenshots of website

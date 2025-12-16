@@ -6,12 +6,10 @@ title: "GeoCloak: Counterfactual Defense for Visual Geolocation"
 date: 2025-05-16
 published: true
 labels:
-  - Computer Vision
   - Interpretability
   - Privacy
   - Vision-Language Models
   - Python
-  - PyTorch
 summary: "I used PixelSHAP defense that uses DINO features and SAM2 segmentation to identify and selectively obscure high-risk geolocation cues in images interpreted by OpenAI’s o3 model."
 ---
 

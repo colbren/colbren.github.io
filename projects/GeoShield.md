@@ -2,7 +2,7 @@
 layout: project
 type: project
 image: img/pixel_shap_cover.png
-title: "GeoShield: Counterfactual Defense for Visual Geolocation"
+title: "GeoCloak: Counterfactual Defense for Visual Geolocation"
 date: 2025-05-16
 published: true
 labels:

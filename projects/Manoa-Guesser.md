@@ -38,16 +38,13 @@ Manoa Guesser helped bridge the gap between classroom exercises and real-world s
 
 ## Resource Links
 [Source Code](https://github.com/manoa-guesser/manoa-guesser)
-
 [GitHub Organization](https://github.com/manoa-guesser)
-
 [Live Deployment](https://manoa-guesser.vercel.app/)
-
 [Website Documentation](https://manoa-guesser.github.io/)
 
 ## Screenshots of website
 <div class="text-center p-4">
-  <img width="700px" src="../img/M3-Game-Page.png" class="img-thumbnail" >
-  <img width="700px" src="../img/M3-Submission.png" class="img-thumbnail" >
-  <img width="700px" src="../img/M3-Leaderboard.png" class="img-thumbnail" >
+  <img width="600px" src="../img/M3-Game-Page.png" class="img-thumbnail" >
+  <img width="600px" src="../img/M3-Submission.png" class="img-thumbnail" >
+  <img width="600px" src="../img/M3-Leaderboard.png" class="img-thumbnail" >
 </div>

@@ -1,7 +1,7 @@
 ---
 layout: project
 type: project
-image: img/manoa.png
+image: img/manoa.jpeg
 title: "Manoa Guesser"
 date: 2025-12-15
 published: true

@@ -3,7 +3,7 @@ layout: essay
 type: essay
 title: "Final Project Extra Credit"
 date: 2025-11-04
-published: True
+published: False
 labels:
   - Software Engineering
   - Nextjs

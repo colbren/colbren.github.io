@@ -1,7 +1,7 @@
 ---
 layout: essay
 type: essay
-title: "Ask Smart: A Key for Success"
+title: "From Code to Craft: Learning What Software Engineering Really Means"
 date: 2025-12-15
 published: True
 labels:

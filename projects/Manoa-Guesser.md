@@ -36,21 +36,18 @@ I also learned the importance of clear communication and documentation. Many cha
 ## Reflection
 Manoa Guesser helped bridge the gap between classroom exercises and real-world software development. Working on a shared codebase with multiple contributors made concepts like coding standards, issue-driven development, and testing feel necessary rather than academic. This project gave me confidence in my ability to contribute meaningfully to larger software systems and prepared me for future team-based engineering projects.
 
-## Resources
+## Resource Links
 [Source Code](https://github.com/manoa-guesser/manoa-guesser)
-
 
 [GitHub Organization](https://github.com/manoa-guesser)
 
-
 [Live Deployment](https://manoa-guesser.vercel.app/)
-
 
 [Website Documentation](https://manoa-guesser.github.io/)
 
 ## Screenshots of website
 <div class="text-center p-4">
-  <img width="750px" src="../img/M3-Game-Page.png" class="img-thumbnail" >
-  <img width="750px" src="../img/M3-Submission.png" class="img-thumbnail" >
-  <img width="750px" src="../img/M3-Leaderboard.png" class="img-thumbnail" >
+  <img width="700px" src="../img/M3-Game-Page.png" class="img-thumbnail" >
+  <img width="700px" src="../img/M3-Submission.png" class="img-thumbnail" >
+  <img width="700px" src="../img/M3-Leaderboard.png" class="img-thumbnail" >
 </div>

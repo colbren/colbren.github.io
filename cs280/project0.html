@@ -35,13 +35,17 @@ layout: home
   <div class="row g-3">
     <div class="col-6">
       <figure class="figure w-100">
-        <img src="{{ site.baseurl }}/img/zoom2.jpg" class="figure-img img-fluid rounded" alt="Zoomed-in photo of building facade from far away">
+        <div class="rounded overflow-hidden" style="aspect-ratio: 3 / 4;">
+          <img src="{{ site.baseurl }}/img/zoom2.jpg" class="w-100 h-100" style="object-fit: cover;" alt="Zoomed-in photo of building facade from far away">
+        </div>
         <figcaption class="figure-caption text-center">Far away + zoomed in</figcaption>
       </figure>
     </div>
     <div class="col-6">
       <figure class="figure w-100">
-        <img src="{{ site.baseurl }}/img/normal2.jpg" class="figure-img img-fluid rounded" alt="Close-up photo of building facade without zoom">
+        <div class="rounded overflow-hidden" style="aspect-ratio: 3 / 4;">
+          <img src="{{ site.baseurl }}/img/normal2.jpg" class="w-100 h-100" style="object-fit: cover;" alt="Close-up photo of building facade without zoom">
+        </div>
         <figcaption class="figure-caption text-center">Close, no zoom</figcaption>
       </figure>
     </div>

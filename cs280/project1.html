@@ -1,0 +1,233 @@
+---
+title: "CS280 Project 1: Images of the Russian Empire"
+layout: home
+---
+
+<div class="container py-5" style="max-width: 900px;">
+  <p><a href="{{ site.baseurl }}/cs280/">&larr; Back to CS280</a></p>
+
+  <h1 class="display-5">Project 1: Colorizing the Prokudin-Gorskii Photo Collection</h1>
+  <p class="text-muted">
+    Around 1907, the Russian photographer Sergei Prokudin-Gorskii took black and white photos through red, green, and blue filters, planning to combine them later into color. He never got the chance to see it happen, but the Library of Congress has since digitized his glass plate negatives. Each digitized image is one tall grayscale strip with the blue, green, and red exposures stacked on top of each other. My job for this project was to write a program that automatically finds each channel, lines them up, and stacks them back into a color photo.
+  </p>
+
+  <h2 class="h4 mt-5 mb-3">The Basic Idea</h2>
+  <p>
+    The three channels are almost the same image, just shifted by a few pixels because the plates were exposed one after another and the camera or the subject moved slightly in between. To fix this, I treat the blue channel as the reference and search for the (dx, dy) shift that lines the green and red channels up with it best.
+  </p>
+  <p>
+    To score how well two channels line up at a given shift, I used two different metrics: normalized cross-correlation (NCC), which measures how similar the patterns of brightness are between the two images, and the sum of squared differences (SSD, also called the L2 norm), which measures how far apart the pixel values are. For a given candidate shift, I crop off a border first (so dark plate edges don't dominate the score), then roll one channel by that shift and compare it to the reference. NCC picks the shift with the highest correlation, SSD picks the shift with the lowest difference. On every image where alignment actually worked, NCC and SSD agreed on the exact same offset, so I mostly report NCC numbers below and just note when I checked SSD against it.
+  </p>
+
+  <h2 class="h4 mt-5 mb-3">Part 1: Single-Scale Alignment on the JPGs</h2>
+  <p>
+    The small JPG images are only a few hundred pixels tall, so a plain exhaustive search over a window of possible shifts is fast enough. For each channel I tried every (dx, dy) in a [-15, 15] window, scored each one with NCC (and separately with SSD, for comparison), and kept the best. Here are the results:
+  </p>
+
+  <div class="row g-3">
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_cathedral_singlescale.jpg" class="figure-img img-fluid rounded" alt="Colorized cathedral photo">
+        <figcaption class="figure-caption text-center">Cathedral<br>G: (2, 5)  R: (3, 12)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_monastery_singlescale.jpg" class="figure-img img-fluid rounded" alt="Colorized monastery photo">
+        <figcaption class="figure-caption text-center">Monastery<br>G: (2, -3)  R: (2, 3)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_tobolsk_singlescale.jpg" class="figure-img img-fluid rounded" alt="Colorized tobolsk photo">
+        <figcaption class="figure-caption text-center">Tobolsk<br>G: (3, 3)  R: (3, 6)</figcaption>
+      </figure>
+    </div>
+  </div>
+  <p class="mt-3">
+    I double checked these three with SSD instead of NCC and got the exact same offsets every time, which makes sense since these are clean, well exposed images where both metrics have an easy time finding the real peak.
+  </p>
+
+  <h2 class="h4 mt-5 mb-3">Part 2: Multi-Scale Pyramid Alignment on the Full Dataset</h2>
+  <p>
+    The full resolution scans are TIFFs around 3000 to 3700 pixels wide, so a [-15, 15] exhaustive search at full resolution would still be way too slow if I had to do it at every pixel of every possible shift from scratch, and a small window would not even be big enough to catch some of these images which shift more than 15 pixels. So instead I built an image pyramid: repeatedly downsample the image by half using 2x2 block averaging until it is under 64 pixels on its shorter side, run the exhaustive [-15, 15] search at that tiny scale to get a rough estimate, then walk back up the pyramid one level at a time, doubling the previous estimate and refining it with a small local search (window of 2) to correct for rounding error from the downsampling. This way each level only ever has to search a small window, and the total search stays fast even on the full size images.
+  </p>
+  <p>
+    I ran this on every image in the dataset (the 3 JPGs plus all the given TIFFs), all using NCC on raw pixel intensities with a coarsest-level window of 15. Here are the results:
+  </p>
+
+  <div class="row g-3">
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_cathedral_multiscale.jpg" class="figure-img img-fluid rounded" alt="Colorized cathedral photo, multiscale">
+        <figcaption class="figure-caption text-center">Cathedral<br>G: (2, 5)  R: (3, 12)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_monastery_multiscale.jpg" class="figure-img img-fluid rounded" alt="Colorized monastery photo, multiscale">
+        <figcaption class="figure-caption text-center">Monastery<br>G: (2, -3)  R: (2, 3)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_tobolsk_multiscale.jpg" class="figure-img img-fluid rounded" alt="Colorized tobolsk photo, multiscale">
+        <figcaption class="figure-caption text-center">Tobolsk<br>G: (3, 3)  R: (3, 6)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_church_multiscale.jpg" class="figure-img img-fluid rounded" alt="Colorized church photo">
+        <figcaption class="figure-caption text-center">Church<br>G: (4, 25)  R: (-4, 58)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_emir_multiscale.jpg" class="figure-img img-fluid rounded" alt="Emir photo, failed alignment">
+        <figcaption class="figure-caption text-center">Emir &mdash; failed, see below<br>G: (24, 49)  R: (-780, 80)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_harvesters_multiscale.jpg" class="figure-img img-fluid rounded" alt="Colorized harvesters photo">
+        <figcaption class="figure-caption text-center">Harvesters<br>G: (17, 60)  R: (14, 124)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_icon_multiscale.jpg" class="figure-img img-fluid rounded" alt="Colorized icon photo">
+        <figcaption class="figure-caption text-center">Icon<br>G: (17, 41)  R: (23, 90)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_ilemselga_multiscale.jpg" class="figure-img img-fluid rounded" alt="Colorized ilemselga photo">
+        <figcaption class="figure-caption text-center">Ilemselga<br>G: (7, 40)  R: (11, 130)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_melons_multiscale.jpg" class="figure-img img-fluid rounded" alt="Colorized melons photo">
+        <figcaption class="figure-caption text-center">Melons<br>G: (10, 82)  R: (13, 178)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_religous_painting_multiscale.jpg" class="figure-img img-fluid rounded" alt="Colorized religious painting photo">
+        <figcaption class="figure-caption text-center">Religious Painting<br>G: (3, 28)  R: (7, 68)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_self_portrait_multiscale.jpg" class="figure-img img-fluid rounded" alt="Colorized self portrait photo">
+        <figcaption class="figure-caption text-center">Self Portrait<br>G: (29, 79)  R: (37, 176)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_siren_multiscale.jpg" class="figure-img img-fluid rounded" alt="Colorized siren photo">
+        <figcaption class="figure-caption text-center">Siren<br>G: (-6, 50)  R: (-25, 96)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_three_generations_multiscale.jpg" class="figure-img img-fluid rounded" alt="Colorized three generations photo">
+        <figcaption class="figure-caption text-center">Three Generations<br>G: (14, 53)  R: (11, 112)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_wharf_multiscale.jpg" class="figure-img img-fluid rounded" alt="Colorized wharf photo">
+        <figcaption class="figure-caption text-center">Wharf<br>G: (-7, 15)  R: (-16, 83)</figcaption>
+      </figure>
+    </div>
+  </div>
+  <p class="mt-3">
+    I also spot checked SSD against NCC on a couple of these (Wharf and Emir) and got identical offsets in both cases, including the failure on Emir, so the failures below aren't just an NCC quirk.
+  </p>
+
+  <h2 class="h4 mt-5 mb-3">Part 3: A Few of My Own from the Prokudin-Gorskii Collection</h2>
+  <p>
+    I also grabbed three more glass plate scans from the Library of Congress's Prokudin-Gorskii collection on my own: a riverside town with a church and bell tower, a sunflower and poppy field in front of a thatched roof cottage, and a small porcelain sphinx figurine on a stand. Two of these actually broke the plain algorithm above (more on that in the next section), so what's shown here is the output after adding the gradient-based alignment feature described in Bells and Whistles.
+  </p>
+
+  <div class="row g-3">
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_test1_bw.jpg" class="figure-img img-fluid rounded" alt="Colorized riverside town photo">
+        <figcaption class="figure-caption text-center">Riverside Town<br>G: (16, 49)  R: (10, 94)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_test2_bw.jpg" class="figure-img img-fluid rounded" alt="Colorized sunflower field photo">
+        <figcaption class="figure-caption text-center">Sunflower Field<br>G: (-5, 21)  R: (-8, 234)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_test3_bw.jpg" class="figure-img img-fluid rounded" alt="Colorized porcelain sphinx figurine photo">
+        <figcaption class="figure-caption text-center">Sphinx Figurine<br>G: (27, 21)  R: (53, 110)</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <h2 class="h4 mt-5 mb-3">When It Didn't Work</h2>
+  <p>
+    Three images came out badly misaligned with the plain algorithm: Emir, and two of the three I picked myself (the sunflower field and the sphinx). In every case it was the red channel that went haywire, landing on some huge, clearly wrong shift (Emir's red channel shifted -780 pixels sideways, for example, way more than a person or camera could realistically move between exposures).
+  </p>
+  <p>
+    The reason comes down to how the plates were made. Prokudin-Gorskii's three exposures were taken through different color filters and at slightly different times, so the raw brightness pattern in the red-filtered plate does not always look like a simple shifted copy of the blue-filtered plate. Something that's bright red in the actual scene, like a flower or a robe, can be very bright on the red plate and very dark on the blue plate. NCC and SSD are both just comparing raw pixel intensities, so when a big chunk of the image has this kind of colored content, the metric gets confused about what "matching" even looks like and locks onto some coincidental alignment of edges instead of the real one. It's not a bug in the search itself, since I checked that both NCC and SSD land on the exact same wrong answer, it's that raw intensity is the wrong thing to be comparing in the first place for these three images. I fixed this with the gradient-magnitude feature described below.
+  </p>
+
+  <h2 class="h4 mt-5 mb-3">Bells and Whistles</h2>
+
+  <h3 class="h5 mt-4">Better Features for Alignment: Gradient Magnitude</h3>
+  <p>
+    Since the failures above came from comparing raw intensity across channels that don't actually share the same brightness for a given color, I switched to aligning on image gradients instead. I computed the gradient magnitude of each channel with a simple central difference (essentially an edge map) and ran the exact same NCC search on that instead of on raw pixel values. Edges come mostly from scene structure (where an object ends, where a shadow falls) rather than from the filter's color response, so they line up correctly even when the raw brightness doesn't. This fixed all three broken images without changing anything about the images that were already working.
+  </p>
+
+  <div class="row g-3">
+    <div class="col-6">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_emir_multiscale.jpg" class="figure-img img-fluid rounded" alt="Emir photo before fix, badly misaligned">
+        <figcaption class="figure-caption text-center">Before (raw intensity, R: -780, 80)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_emir_bw.jpg" class="figure-img img-fluid rounded" alt="Emir photo after fix, correctly aligned">
+        <figcaption class="figure-caption text-center">After (gradient magnitude, R: 40, 107)</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <h3 class="h5 mt-4">Automatic Cropping, White Balance, and Color Contrast</h3>
+  <p>
+    On top of alignment, I added a small automatic post-processing pipeline to clean up the final output:
+  </p>
+  <ul>
+    <li><strong>Auto crop</strong>: aligning each channel with a circular shift wraps a strip of the opposite edge into view, and the scanned plate usually has its own solid colored border outside the photo too. I crop off the mandatory wrap-around band (computed exactly from the largest shift used) and then look for a sharp intensity jump just past it to catch the plate's own border, so the crop adapts to each image instead of using one fixed margin for everything.</li>
+    <li><strong>White balance</strong>: I used the gray world assumption, which scales each channel so the average color of the whole image comes out neutral gray, since these old plates often had a color cast left over from the filters.</li>
+    <li><strong>Decorrelation stretch</strong>: the three channels tend to be strongly correlated since they mostly agree on brightness, with only a little real color information riding on top, which is what makes these come out looking washed out even after white balancing. I rotate the pixels into the color covariance matrix's eigenbasis, stretch the weaker axes back out toward the strongest one, and rotate back, which pulls out the color variation that was getting buried.</li>
+    <li><strong>Auto contrast</strong>: a simple linear rescale using the 0.5 and 99.5 percentiles (instead of the literal min and max, so a few dust specks can't ruin the whole range) so the image uses the full brightness range.</li>
+  </ul>
+
+  <div class="row g-3">
+    <div class="col-6">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_self_portrait_multiscale.jpg" class="figure-img img-fluid rounded" alt="Self portrait photo before color post-processing">
+        <figcaption class="figure-caption text-center">Before (aligned only)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_self_portrait_bw.jpg" class="figure-img img-fluid rounded" alt="Self portrait photo after color post-processing">
+        <figcaption class="figure-caption text-center">After (cropped, white balanced, contrast stretched)</figcaption>
+      </figure>
+    </div>
+  </div>
+  <p class="mt-3">
+    The colored border from the plate edge and the wrap-around is gone, and the greens and blues look a lot more natural instead of the slightly washed out, blue-tinted look the raw aligned version has.
+  </p>
+</div>

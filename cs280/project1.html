@@ -7,21 +7,56 @@ layout: home
   <p><a href="{{ site.baseurl }}/cs280/">&larr; Back to CS280</a></p>
 
   <h1 class="display-5">Project 1: Colorizing the Prokudin-Gorskii Photo Collection</h1>
-  <p class="text-muted">
-    Around 1907, the Russian photographer Sergei Prokudin-Gorskii took black and white photos through red, green, and blue filters, planning to combine them later into color. He never got the chance to see it happen, but the Library of Congress has since digitized his glass plate negatives. Each digitized image is one tall grayscale strip with the blue, green, and red exposures stacked on top of each other. My job for this project was to write a program that automatically finds each channel, lines them up, and stacks them back into a color photo.
-  </p>
 
   <h2 class="h4 mt-5 mb-3">The Basic Idea</h2>
   <p>
-    The three channels are almost the same image, just shifted by a few pixels because the plates were exposed one after another and the camera or the subject moved slightly in between. To fix this, I treat the blue channel as the reference and search for the (dx, dy) shift that lines the green and red channels up with it best.
+    Each digitized glass plate is one tall grayscale image with three exposures of the same scene stacked on top of each other: blue on top, then green, then red. If you just cut the strip into thirds and stack them directly with no shift, you get something like this:
+  </p>
+
+  <div class="row g-3">
+    <div class="col-6">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_cathedral_naive.jpg" class="figure-img img-fluid rounded" alt="Cathedral photo with channels stacked directly, no alignment">
+        <figcaption class="figure-caption text-center">Before: channels stacked with zero shift</figcaption>
+      </figure>
+    </div>
+    <div class="col-6">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_cathedral_singlescale.jpg" class="figure-img img-fluid rounded" alt="Cathedral photo after alignment">
+        <figcaption class="figure-caption text-center">After: channels aligned</figcaption>
+      </figure>
+    </div>
+  </div>
+  <p class="mt-3">
+    That colored ghosting is exactly the problem this project solves. The plates were exposed one after another, so the camera or the subject moved a little in between, and each channel ends up shifted by a handful of pixels relative to the others. My job was to write a program that automatically finds, for the green and red channels, the (dx, dy) shift that lines each one up with the blue channel (used as the fixed reference), and then stacks the three back into a clean color photo.
+  </p>
+
+  <h2 class="h4 mt-5 mb-3">Scoring an Alignment: NCC and SSD</h2>
+  <p>
+    To find the right shift I need a way to score how well two channels line up for a given candidate shift. I implemented two classic metrics for this:
   </p>
   <p>
-    To score how well two channels line up at a given shift, I used two different metrics: normalized cross-correlation (NCC), which measures how similar the patterns of brightness are between the two images, and the sum of squared differences (SSD, also called the L2 norm), which measures how far apart the pixel values are. For a given candidate shift, I crop off a border first (so dark plate edges don't dominate the score), then roll one channel by that shift and compare it to the reference. NCC picks the shift with the highest correlation, SSD picks the shift with the lowest difference. On every image where alignment actually worked, NCC and SSD agreed on the exact same offset, so I mostly report NCC numbers below and just note when I checked SSD against it.
+    <strong>Normalized cross-correlation (NCC).</strong> Let \(A\) be the reference (blue) channel and \(B\) the channel being aligned, both restricted to an interior region with a 10% border cropped off on every side so the plate's dark edges can't dominate the score. For a candidate shift \((dy, dx)\), I circularly shift \(B\) by that amount, then center both arrays by subtracting their means: \(a = A - \bar{A}\) and \(b = B_{(dy,dx)} - \bar{B}_{(dy,dx)}\). The score is
+  </p>
+  \[
+  \text{NCC}(dy, dx) = \frac{\sum_i a_i \, b_i}{\sqrt{\sum_i a_i^2} \; \sqrt{\sum_i b_i^2}}
+  \]
+  <p>
+    which is just the cosine of the angle between the two centered pixel vectors. It ranges from -1 to 1, and a value near 1 means the two channels have very similar patterns of bright and dark regardless of their absolute brightness or contrast, since the mean subtraction and the normalization in the denominator cancel both of those out. I search every \((dy, dx)\) in the window and keep the shift with the highest NCC. If either array has zero variance the denominator is zero, so I just skip that candidate (treat it as the worst possible score) instead of dividing by zero.
+  </p>
+  <p>
+    <strong>Sum of squared differences (SSD / L2 norm).</strong> Same cropped, shifted arrays, but instead of correlation I just measure how far apart the raw pixel values are:
+  </p>
+  \[
+  \text{SSD}(dy, dx) = \sum_i \left( A_i - B_{(dy,dx),i} \right)^2
+  \]
+  <p>
+    Here I want the shift that <em>minimizes</em> this value instead of maximizing it. Intuitively NCC cares about matching patterns and is somewhat forgiving of brightness differences between channels, while SSD wants the pixel values themselves to line up closely. In practice, everywhere the alignment actually succeeded, both metrics picked the exact same shift, since a real alignment tends to be a strong, unambiguous winner by either measure. I report NCC results throughout since that's what I used by default, and call out the few places I cross-checked against SSD.
   </p>
 
   <h2 class="h4 mt-5 mb-3">Part 1: Single-Scale Alignment on the JPGs</h2>
   <p>
-    The small JPG images are only a few hundred pixels tall, so a plain exhaustive search over a window of possible shifts is fast enough. For each channel I tried every (dx, dy) in a [-15, 15] window, scored each one with NCC (and separately with SSD, for comparison), and kept the best. Here are the results:
+    The three provided JPGs are only a few hundred pixels tall, so I started with the simplest possible approach: exhaustive search. For each of the green and red channels, I tried every integer \((dy, dx)\) in a \([-15, 15]\) window (a 31 &times; 31 grid of 961 candidate shifts), scored each one with NCC as described above, and kept the best. Since the images are small, checking almost a thousand shifts per channel still only takes a fraction of a second, so there was no need for anything fancier here.
   </p>
 
   <div class="row g-3">
@@ -45,15 +80,49 @@ layout: home
     </div>
   </div>
   <p class="mt-3">
-    I double checked these three with SSD instead of NCC and got the exact same offsets every time, which makes sense since these are clean, well exposed images where both metrics have an easy time finding the real peak.
+    I double checked these three with SSD instead of NCC and got the exact same offsets every time, which makes sense since these are clean, well exposed images where both metrics have an easy time finding the real peak. The before/after pair up in "The Basic Idea" above is this same Cathedral image, so you can see directly what a (2, 5) and (3, 12) pixel correction buys you.
   </p>
 
   <h2 class="h4 mt-5 mb-3">Part 2: Multi-Scale Pyramid Alignment on the Full Dataset</h2>
   <p>
-    The full resolution scans are TIFFs around 3000 to 3700 pixels wide, so a [-15, 15] exhaustive search at full resolution would still be way too slow if I had to do it at every pixel of every possible shift from scratch, and a small window would not even be big enough to catch some of these images which shift more than 15 pixels. So instead I built an image pyramid: repeatedly downsample the image by half using 2x2 block averaging until it is under 64 pixels on its shorter side, run the exhaustive [-15, 15] search at that tiny scale to get a rough estimate, then walk back up the pyramid one level at a time, doubling the previous estimate and refining it with a small local search (window of 2) to correct for rounding error from the downsampling. This way each level only ever has to search a small window, and the total search stays fast even on the full size images.
+    The full resolution scans are a different story: they're TIFFs around 3000 to 3700 pixels wide, and several of them need shifts far bigger than the &plusmn;15 window that worked fine on the JPGs. Melons needs a red shift of (13, 178), Self Portrait needs (37, 176), Harvesters needs (14, 124). A window wide enough to reach a 178 pixel shift would have to check roughly 360 &times; 360 &asymp; 130,000 candidate positions per channel, and each check means comparing millions of pixels at full resolution. That's the real motivation for a coarser strategy, not just raw speed: a fixed small window can't even find these offsets in the first place.
   </p>
   <p>
-    I ran this on every image in the dataset (the 3 JPGs plus all the given TIFFs), all using NCC on raw pixel intensities with a coarsest-level window of 15. Here are the results:
+    The fix is a classic coarse-to-fine image pyramid. I build the pyramid by repeatedly downsampling the image by a factor of 2, using simple 2 &times; 2 block averaging (no library resize, just reshape-and-mean):
+  </p>
+  \[
+  I^{(k+1)} = \text{downsample}_2\!\left(I^{(k)}\right), \qquad I^{(0)} = I
+  \]
+  <p>
+    I keep downsampling until the shorter side of the image is 64 pixels or less, which only takes 5 or 6 halvings for these images. At that coarsest level \(L\), a shift of even 178 pixels at full resolution has shrunk down to roughly \(178 / 2^L \approx 3\) pixels, well within reach of the same &plusmn;15 exhaustive search from Part 1. Once I have that coarse estimate, I walk back down the pyramid one level at a time: at each finer level \(k\), I double the previous level's estimate (since going one level finer doubles all distances) and then refine it with a small local search of window 2 to fix the rounding error introduced by downsampling:
+  </p>
+  \[
+  (dy, dx)_k \;=\; 2\,(dy, dx)_{k+1} \;+\; \delta_k, \qquad \delta_k \in [-2, 2]^2 \text{ found by exhaustive search at level } k
+  \]
+  <p>
+    By the time this reaches the full resolution level, the total number of candidate shifts checked across every level is tiny compared to one exhaustive search at full resolution with a big enough window, and the result is a shift accurate to the pixel at full resolution.
+  </p>
+  <p>
+    Here's the before/after motivating example: Wharf's channels are shifted by (-7, 15) and (-16, 83), well past anything a &plusmn;15 window could find directly, and yet the pyramid locks onto it fully automatically.
+  </p>
+
+  <div class="row g-3">
+    <div class="col-6">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_wharf_naive.jpg" class="figure-img img-fluid rounded" alt="Wharf photo with channels stacked directly, no alignment">
+        <figcaption class="figure-caption text-center">Before: channels stacked with zero shift</figcaption>
+      </figure>
+    </div>
+    <div class="col-6">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_wharf_multiscale.jpg" class="figure-img img-fluid rounded" alt="Wharf photo after pyramid alignment">
+        <figcaption class="figure-caption text-center">After: pyramid aligned<br>G: (-7, 15)  R: (-16, 83)</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <p class="mt-4">
+    I ran this same pipeline on every image in the dataset (the 3 JPGs plus all the given TIFFs), all using NCC on raw pixel intensities with a coarsest-level window of 15. Here are the full results:
   </p>
 
   <div class="row g-3">
@@ -143,12 +212,15 @@ layout: home
     </div>
   </div>
   <p class="mt-3">
-    I also spot checked SSD against NCC on a couple of these (Wharf and Emir) and got identical offsets in both cases, including the failure on Emir, so the failures below aren't just an NCC quirk.
+    I also spot checked SSD against NCC on a couple of these (Wharf and Emir) and got identical offsets in both cases, including the failure on Emir, so the failure below isn't just an NCC quirk, it shows up the same way under both metrics.
   </p>
 
   <h2 class="h4 mt-5 mb-3">Part 3: A Few of My Own from the Prokudin-Gorskii Collection</h2>
   <p>
-    I also grabbed three more glass plate scans from the Library of Congress's Prokudin-Gorskii collection on my own: a riverside town with a church and bell tower, a sunflower and poppy field in front of a thatched roof cottage, and a small porcelain sphinx figurine on a stand. Two of these actually broke the plain algorithm above (more on that in the next section), so what's shown here is the output after adding the gradient-based alignment feature described in Bells and Whistles.
+    To make sure the pipeline actually generalizes and I wasn't just overfitting to the given examples, I grabbed three more glass plate scans from the Library of Congress's Prokudin-Gorskii collection on my own: a riverside town with a church and bell tower, a sunflower and poppy field in front of a thatched roof cottage, and a small porcelain sphinx figurine on a stand. I ran the exact same pyramid pipeline on all three with no special casing.
+  </p>
+  <p>
+    The riverside town aligned correctly right away. The sunflower field and the sphinx did not: both came back with the same kind of badly broken red channel shift seen on Emir above. What's shown below for those two is the corrected output, using the gradient-based alignment feature from Bells and Whistles; the raw, broken versions and the reasoning for why they failed are covered in the next two sections.
   </p>
 
   <div class="row g-3">
@@ -174,60 +246,142 @@ layout: home
 
   <h2 class="h4 mt-5 mb-3">When It Didn't Work</h2>
   <p>
-    Three images came out badly misaligned with the plain algorithm: Emir, and two of the three I picked myself (the sunflower field and the sphinx). In every case it was the red channel that went haywire, landing on some huge, clearly wrong shift (Emir's red channel shifted -780 pixels sideways, for example, way more than a person or camera could realistically move between exposures).
+    Three images came out misaligned with the plain, raw-intensity version of the algorithm: Emir from the given dataset, and two of the three I picked myself, the sunflower field and the sphinx. In every case it was specifically the red channel that went wrong, landing on some huge, clearly incorrect shift rather than something close to the truth. Emir's red channel jumped -780 pixels sideways, the sunflower field's jumped to a y-shift of 234 with almost no meaningful x-shift, and the sphinx came out visibly doubled. None of these are plausible camera or subject motion between two exposures taken a few seconds apart.
   </p>
+
+  <div class="row g-3">
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_emir_multiscale.jpg" class="figure-img img-fluid rounded" alt="Emir photo, badly misaligned red channel">
+        <figcaption class="figure-caption text-center">Emir: R shifted (-780, 80)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_test2_multiscale.jpg" class="figure-img img-fluid rounded" alt="Sunflower field photo, badly misaligned red channel">
+        <figcaption class="figure-caption text-center">Sunflower Field: R shifted (-8, 234)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_test3_multiscale.jpg" class="figure-img img-fluid rounded" alt="Sphinx figurine photo, badly misaligned red channel">
+        <figcaption class="figure-caption text-center">Sphinx: R shifted (66, 0) at plain single-scale, similarly wrong through the pyramid</figcaption>
+      </figure>
+    </div>
+  </div>
+
+  <p class="mt-3">
+    The root cause traces back to how the plates were actually exposed. Prokudin-Gorskii's three plates were shot through different color filters, one after another, so a channel's raw brightness is really "how much light of that filter's color bounced off each part of the scene," not just "how bright the scene is." NCC and SSD, as I defined them above, only ever compare raw brightness values. That assumption holds fine when the scene's true colors are fairly neutral or evenly distributed, but it breaks down when a large chunk of the frame is dominated by one saturated, strongly colored region:
+  </p>
+  <ul>
+    <li><strong>Emir</strong> is a portrait of two men in vividly colored robes (one blue, one pink and gold). A saturated blue robe reflects very little red light, so it shows up bright in the blue plate and almost black in the red plate; a pink and gold robe does close to the opposite. With that much of the frame flipping brightness between channels, the true alignment stops being the strongest correlation peak, and NCC/SSD instead lock onto whatever coincidental overlap of dark and light regions scores best, which has nothing to do with the real geometry.</li>
+    <li><strong>Sunflower Field</strong> is a warm, low sun evening shot with a sky full of pink and orange tones and a foreground of saturated red poppies and yellow sunflowers against green leaves. Between the color cast on the sky and the strongly saturated flowers, large areas of the frame again have a brightness relationship between red and blue that doesn't just look like a shifted copy, and the search wanders off after the wrong peak.</li>
+    <li><strong>Sphinx</strong> is a small figurine shot against a plain, nearly blank background, so once the border is cropped there just isn't much texture left for the metric to lock onto except the figurine's silhouette and the gold and pink paint on it. With so little of the frame carrying real structure, a coincidental match somewhere in the flat background or the colored paint can score competitively with the true alignment.</li>
+  </ul>
   <p>
-    The reason comes down to how the plates were made. Prokudin-Gorskii's three exposures were taken through different color filters and at slightly different times, so the raw brightness pattern in the red-filtered plate does not always look like a simple shifted copy of the blue-filtered plate. Something that's bright red in the actual scene, like a flower or a robe, can be very bright on the red plate and very dark on the blue plate. NCC and SSD are both just comparing raw pixel intensities, so when a big chunk of the image has this kind of colored content, the metric gets confused about what "matching" even looks like and locks onto some coincidental alignment of edges instead of the real one. It's not a bug in the search itself, since I checked that both NCC and SSD land on the exact same wrong answer, it's that raw intensity is the wrong thing to be comparing in the first place for these three images. I fixed this with the gradient-magnitude feature described below.
+    I confirmed this wasn't just an NCC artifact by checking SSD on Emir too, and it landed on the identical wrong shift. That's a strong signal the problem is the feature being compared (raw intensity), not the particular scoring rule, which is exactly what the gradient-based fix below addresses.
   </p>
 
   <h2 class="h4 mt-5 mb-3">Bells and Whistles</h2>
 
   <h3 class="h5 mt-4">Better Features for Alignment: Gradient Magnitude</h3>
   <p>
-    Since the failures above came from comparing raw intensity across channels that don't actually share the same brightness for a given color, I switched to aligning on image gradients instead. I computed the gradient magnitude of each channel with a simple central difference (essentially an edge map) and ran the exact same NCC search on that instead of on raw pixel values. Edges come mostly from scene structure (where an object ends, where a shadow falls) rather than from the filter's color response, so they line up correctly even when the raw brightness doesn't. This fixed all three broken images without changing anything about the images that were already working.
+    Since the failures above all trace back to comparing raw intensity across channels that don't actually share the same brightness for a given real-world color, the fix is to align on something that's less sensitive to color and more sensitive to scene structure: image gradients. For each channel I compute a gradient magnitude image using a simple central-difference gradient,
+  </p>
+  \[
+  \nabla I = \left( \frac{\partial I}{\partial x},\; \frac{\partial I}{\partial y} \right), \qquad \|\nabla I\| = \sqrt{\left(\frac{\partial I}{\partial x}\right)^2 + \left(\frac{\partial I}{\partial y}\right)^2}
+  \]
+  <p>
+    and then run the exact same NCC search from before, just scoring shifts on \(\|\nabla I\|\) instead of on raw pixel values. An edge, where an object ends or a shadow falls, shows up as a strong gradient response in every channel because it comes from the scene's geometry, not from which color filter the plate happened to be exposed through, so this feature stays consistent across channels even when raw brightness does not. Swapping in this one feature fixed all three broken images, with zero change to the images that were already aligning correctly.
   </p>
 
   <div class="row g-3">
-    <div class="col-6">
+    <div class="col-6 col-md-4">
       <figure class="figure w-100">
         <img src="{{ site.baseurl }}/img/project1/out_emir_multiscale.jpg" class="figure-img img-fluid rounded" alt="Emir photo before fix, badly misaligned">
-        <figcaption class="figure-caption text-center">Before (raw intensity, R: -780, 80)</figcaption>
+        <figcaption class="figure-caption text-center">Emir before<br>raw intensity, R: (-780, 80)</figcaption>
       </figure>
     </div>
-    <div class="col-6">
+    <div class="col-6 col-md-4">
       <figure class="figure w-100">
         <img src="{{ site.baseurl }}/img/project1/out_emir_bw.jpg" class="figure-img img-fluid rounded" alt="Emir photo after fix, correctly aligned">
-        <figcaption class="figure-caption text-center">After (gradient magnitude, R: 40, 107)</figcaption>
+        <figcaption class="figure-caption text-center">Emir after<br>gradient magnitude, R: (40, 107)</figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="row g-3 mt-1">
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_test2_multiscale.jpg" class="figure-img img-fluid rounded" alt="Sunflower field photo before fix, badly misaligned">
+        <figcaption class="figure-caption text-center">Sunflower Field before<br>raw intensity, R: (-8, 234)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_test2_bw.jpg" class="figure-img img-fluid rounded" alt="Sunflower field photo after fix, correctly aligned">
+        <figcaption class="figure-caption text-center">Sunflower Field after<br>gradient magnitude, R: (-8, 234)&rarr;fixed</figcaption>
+      </figure>
+    </div>
+  </div>
+  <div class="row g-3 mt-1">
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_test3_multiscale.jpg" class="figure-img img-fluid rounded" alt="Sphinx figurine photo before fix, badly misaligned">
+        <figcaption class="figure-caption text-center">Sphinx before<br>raw intensity, misaligned</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_test3_bw.jpg" class="figure-img img-fluid rounded" alt="Sphinx figurine photo after fix, correctly aligned">
+        <figcaption class="figure-caption text-center">Sphinx after<br>gradient magnitude, R: (53, 110)</figcaption>
       </figure>
     </div>
   </div>
 
-  <h3 class="h5 mt-4">Automatic Cropping, White Balance, and Color Contrast</h3>
+  <h3 class="h5 mt-4">Automatic Cropping, White Balance, Color Decorrelation, and Contrast</h3>
   <p>
-    On top of alignment, I added a small automatic post-processing pipeline to clean up the final output:
+    Getting the channels aligned is only half of making a good looking photo. Even a perfectly aligned stack still has a colored border around the edge and often looks dull or color-cast, so I added a small automatic post-processing pipeline that runs after alignment:
   </p>
-  <ul>
-    <li><strong>Auto crop</strong>: aligning each channel with a circular shift wraps a strip of the opposite edge into view, and the scanned plate usually has its own solid colored border outside the photo too. I crop off the mandatory wrap-around band (computed exactly from the largest shift used) and then look for a sharp intensity jump just past it to catch the plate's own border, so the crop adapts to each image instead of using one fixed margin for everything.</li>
-    <li><strong>White balance</strong>: I used the gray world assumption, which scales each channel so the average color of the whole image comes out neutral gray, since these old plates often had a color cast left over from the filters.</li>
-    <li><strong>Decorrelation stretch</strong>: the three channels tend to be strongly correlated since they mostly agree on brightness, with only a little real color information riding on top, which is what makes these come out looking washed out even after white balancing. I rotate the pixels into the color covariance matrix's eigenbasis, stretch the weaker axes back out toward the strongest one, and rotate back, which pulls out the color variation that was getting buried.</li>
-    <li><strong>Auto contrast</strong>: a simple linear rescale using the 0.5 and 99.5 percentiles (instead of the literal min and max, so a few dust specks can't ruin the whole range) so the image uses the full brightness range.</li>
-  </ul>
+  <p>
+    <strong>Auto crop.</strong> Aligning a channel with a circular shift wraps a strip from the opposite edge into view, and the scanned plate usually has its own solid colored border outside the photo as well. The wrap band has a size I know exactly, it's just the largest shift used across channels, so I always crop at least that much off every side. Past that mandatory margin, I look at the average row-to-row and column-to-column intensity change near the edge and crop further if there's a sharp, clearly-standing-out jump (meaning a real plate border), so the crop adapts per image instead of using one fixed margin for every photo.
+  </p>
+  <p>
+    <strong>White balance.</strong> I used the gray-world assumption: the average color over the whole photo should be roughly neutral gray, so any consistent tint is treated as a color cast to remove. For each channel \(c\) I compute its mean \(\mu_c\) and rescale it toward the average of all three channel means:
+  </p>
+  \[
+  s_c = \frac{\tfrac{1}{3}\left(\mu_R + \mu_G + \mu_B\right)}{\mu_c}, \qquad I'_c = s_c \cdot I_c
+  \]
+  <p>
+    <strong>Decorrelation stretch.</strong> Since the three channels are really three exposures of the same brightness pattern, they end up strongly correlated with each other, with only a little real color information riding on top, which is what makes an aligned image still look washed out and monochrome-ish even after white balancing. I compute the 3&times;3 covariance matrix of the RGB pixels, find its eigenvectors (the directions where the channels are decorrelated) and eigenvalue standard deviations \(\sigma_i\), then partially equalize them toward their mean \(\bar\sigma\) with a strength parameter \(\alpha\):
+  </p>
+  \[
+  \sigma_i' = (1-\alpha)\,\sigma_i + \alpha\,\bar\sigma
+  \]
+  <p>
+    and rotate the pixels into that eigenbasis, rescale each axis from \(\sigma_i\) to \(\sigma_i'\), and rotate back to RGB. A small \(\alpha\) (I used 0.15) gently amplifies the color variation that was getting drowned out by shared brightness, without pushing the image into the neon-looking oversaturation that the textbook \(\alpha = 1\) version produces on these plates.
+  </p>
+  <p>
+    <strong>Auto contrast.</strong> A last linear rescale so the image uses the full available brightness range, using the 0.5 and 99.5 percentiles instead of the literal min and max so a handful of dust specks or scratches on the old plate can't single-handedly compress the useful range:
+  </p>
+  \[
+  I' = \text{clip}\!\left( \frac{I - p_{0.5}}{p_{99.5} - p_{0.5}},\; 0,\; 1 \right)
+  \]
 
   <div class="row g-3">
     <div class="col-6">
       <figure class="figure w-100">
         <img src="{{ site.baseurl }}/img/project1/out_self_portrait_multiscale.jpg" class="figure-img img-fluid rounded" alt="Self portrait photo before color post-processing">
-        <figcaption class="figure-caption text-center">Before (aligned only)</figcaption>
+        <figcaption class="figure-caption text-center">Before: aligned only</figcaption>
       </figure>
     </div>
     <div class="col-6">
       <figure class="figure w-100">
         <img src="{{ site.baseurl }}/img/project1/out_self_portrait_bw.jpg" class="figure-img img-fluid rounded" alt="Self portrait photo after color post-processing">
-        <figcaption class="figure-caption text-center">After (cropped, white balanced, contrast stretched)</figcaption>
+        <figcaption class="figure-caption text-center">After: cropped, white balanced, decorrelation stretched, contrast stretched</figcaption>
       </figure>
     </div>
   </div>
   <p class="mt-3">
-    The colored border from the plate edge and the wrap-around is gone, and the greens and blues look a lot more natural instead of the slightly washed out, blue-tinted look the raw aligned version has.
+    Comparing the two: the colored border from the plate edge and the wrap-around is gone (auto crop), and the greens and blues look noticeably more natural and separated from each other instead of the slightly flat, blue-tinted look the raw aligned version has (white balance and decorrelation stretch doing most of that work, with contrast stretching giving the whole image a bit more punch on top).
   </p>
 </div>

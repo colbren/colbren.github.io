@@ -220,26 +220,26 @@ layout: home
     To make sure the pipeline actually generalizes and I wasn't just overfitting to the given examples, I grabbed three more glass plate scans from the Library of Congress's Prokudin-Gorskii collection on my own: a riverside town with a church and bell tower, a sunflower and poppy field in front of a thatched roof cottage, and a small porcelain sphinx figurine on a stand. I ran the exact same pyramid pipeline on all three with no special casing.
   </p>
   <p>
-    The riverside town aligned correctly right away. The sunflower field and the sphinx did not: both came back with the same kind of badly broken red channel shift seen on Emir above. What's shown below for those two is the corrected output, using the gradient-based alignment feature from Bells and Whistles; the raw, broken versions and the reasoning for why they failed are covered in the next two sections.
+    These are the raw, unmodified outputs of the same pyramid pipeline from Part 2, no bells and whistles applied yet. The riverside town aligned correctly right away. The sunflower field and the sphinx did not: both came back with the same kind of badly broken red channel shift seen on Emir above. The reasoning for why they failed is covered in the next section, and the fix (and the corrected versions of these same two photos) is in Bells and Whistles further down.
   </p>
 
   <div class="row g-3">
     <div class="col-6 col-md-4">
       <figure class="figure w-100">
-        <img src="{{ site.baseurl }}/img/project1/out_test1_bw.jpg" class="figure-img img-fluid rounded" alt="Colorized riverside town photo">
+        <img src="{{ site.baseurl }}/img/project1/out_test1_multiscale.jpg" class="figure-img img-fluid rounded" alt="Colorized riverside town photo">
         <figcaption class="figure-caption text-center">Riverside Town<br>G: (16, 49)  R: (10, 94)</figcaption>
       </figure>
     </div>
     <div class="col-6 col-md-4">
       <figure class="figure w-100">
-        <img src="{{ site.baseurl }}/img/project1/out_test2_bw.jpg" class="figure-img img-fluid rounded" alt="Colorized sunflower field photo">
-        <figcaption class="figure-caption text-center">Sunflower Field<br>G: (-5, 21)  R: (-8, 234)</figcaption>
+        <img src="{{ site.baseurl }}/img/project1/out_test2_multiscale.jpg" class="figure-img img-fluid rounded" alt="Sunflower field photo, badly misaligned red channel">
+        <figcaption class="figure-caption text-center">Sunflower Field &mdash; failed, see below<br>G: (-6, 21)  R: (363, 0)</figcaption>
       </figure>
     </div>
     <div class="col-6 col-md-4">
       <figure class="figure w-100">
-        <img src="{{ site.baseurl }}/img/project1/out_test3_bw.jpg" class="figure-img img-fluid rounded" alt="Colorized porcelain sphinx figurine photo">
-        <figcaption class="figure-caption text-center">Sphinx Figurine<br>G: (27, 21)  R: (53, 110)</figcaption>
+        <img src="{{ site.baseurl }}/img/project1/out_test3_multiscale.jpg" class="figure-img img-fluid rounded" alt="Sphinx figurine photo, badly misaligned red channel">
+        <figcaption class="figure-caption text-center">Sphinx Figurine &mdash; failed, see below<br>G: (27, 18)  R: (66, 0)</figcaption>
       </figure>
     </div>
   </div>

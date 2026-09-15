@@ -246,7 +246,7 @@ layout: home
 
   <h2 class="h4 mt-5 mb-3">When It Didn't Work</h2>
   <p>
-    Three images came out misaligned with the plain, raw-intensity version of the algorithm: Emir from the given dataset, and two of the three I picked myself, the sunflower field and the sphinx. In every case it was specifically the red channel that went wrong, landing on some huge, clearly incorrect shift rather than something close to the truth. Emir's red channel jumped -780 pixels sideways, the sunflower field's jumped to a y-shift of 234 with almost no meaningful x-shift, and the sphinx came out visibly doubled. None of these are plausible camera or subject motion between two exposures taken a few seconds apart.
+    Three images came out misaligned with the plain, raw-intensity version of the algorithm: Emir from the given dataset, and two of the three I picked myself, the sunflower field and the sphinx. In every case it was specifically the red channel that went wrong, landing on some huge, clearly incorrect shift rather than something close to the truth. Emir's red channel jumped -780 pixels sideways, the sunflower field's jumped 363 pixels sideways with almost no meaningful y-shift, and the sphinx's jumped 66 pixels sideways with no y-shift at all. None of these are plausible camera or subject motion between two exposures taken a few seconds apart.
   </p>
 
   <div class="row g-3">
@@ -259,7 +259,7 @@ layout: home
     <div class="col-6 col-md-4">
       <figure class="figure w-100">
         <img src="{{ site.baseurl }}/img/project1/out_test2_multiscale.jpg" class="figure-img img-fluid rounded" alt="Sunflower field photo, badly misaligned red channel">
-        <figcaption class="figure-caption text-center">Sunflower Field: R shifted (-8, 234)</figcaption>
+        <figcaption class="figure-caption text-center">Sunflower Field: R shifted (363, 0)</figcaption>
       </figure>
     </div>
     <div class="col-6 col-md-4">
@@ -313,13 +313,13 @@ layout: home
     <div class="col-6 col-md-4">
       <figure class="figure w-100">
         <img src="{{ site.baseurl }}/img/project1/out_test2_multiscale.jpg" class="figure-img img-fluid rounded" alt="Sunflower field photo before fix, badly misaligned">
-        <figcaption class="figure-caption text-center">Sunflower Field before<br>raw intensity, R: (-8, 234)</figcaption>
+        <figcaption class="figure-caption text-center">Sunflower Field before<br>raw intensity, R: (363, 0)</figcaption>
       </figure>
     </div>
     <div class="col-6 col-md-4">
       <figure class="figure w-100">
         <img src="{{ site.baseurl }}/img/project1/out_test2_bw.jpg" class="figure-img img-fluid rounded" alt="Sunflower field photo after fix, correctly aligned">
-        <figcaption class="figure-caption text-center">Sunflower Field after<br>gradient magnitude, R: (-8, 234)&rarr;fixed</figcaption>
+        <figcaption class="figure-caption text-center">Sunflower Field after<br>gradient magnitude, R: (-8, 234)</figcaption>
       </figure>
     </div>
   </div>
@@ -327,7 +327,7 @@ layout: home
     <div class="col-6 col-md-4">
       <figure class="figure w-100">
         <img src="{{ site.baseurl }}/img/project1/out_test3_multiscale.jpg" class="figure-img img-fluid rounded" alt="Sphinx figurine photo before fix, badly misaligned">
-        <figcaption class="figure-caption text-center">Sphinx before<br>raw intensity, misaligned</figcaption>
+        <figcaption class="figure-caption text-center">Sphinx before<br>raw intensity, R: (66, 0)</figcaption>
       </figure>
     </div>
     <div class="col-6 col-md-4">
@@ -384,4 +384,108 @@ layout: home
   <p class="mt-3">
     Comparing the two: the colored border from the plate edge and the wrap-around is gone (auto crop), and the greens and blues look noticeably more natural and separated from each other instead of the slightly flat, blue-tinted look the raw aligned version has (white balance and decorrelation stretch doing most of that work, with contrast stretching giving the whole image a bit more punch on top).
   </p>
+
+  <h3 class="h5 mt-4">Putting It All Together: Full Pipeline Results</h3>
+  <p>
+    Once the gradient-magnitude fix was in place, I ran the full pipeline (gradient-based pyramid alignment, then auto crop, white balance, decorrelation stretch, and contrast) on every image, including the ones that never had a problem to begin with. The offsets below are almost identical to the raw-intensity numbers back in Part 2, usually within a pixel, since gradient features and raw intensity mostly agree once there isn't a large saturated color region to confuse things. Emir, Sunflower Field, and Sphinx are the exception, where the offset is completely different from Part 2 because that's exactly where the fix mattered.
+  </p>
+
+  <div class="row g-3">
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_cathedral_bw.jpg" class="figure-img img-fluid rounded" alt="Cathedral photo, full pipeline">
+        <figcaption class="figure-caption text-center">Cathedral<br>G: (2, 5)  R: (3, 12)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_monastery_bw.jpg" class="figure-img img-fluid rounded" alt="Monastery photo, full pipeline">
+        <figcaption class="figure-caption text-center">Monastery<br>G: (2, -3)  R: (2, 3)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_tobolsk_bw.jpg" class="figure-img img-fluid rounded" alt="Tobolsk photo, full pipeline">
+        <figcaption class="figure-caption text-center">Tobolsk<br>G: (2, 3)  R: (3, 6)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_emir_bw.jpg" class="figure-img img-fluid rounded" alt="Emir photo, full pipeline">
+        <figcaption class="figure-caption text-center">Emir<br>G: (24, 49)  R: (40, 107)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_harvesters_bw.jpg" class="figure-img img-fluid rounded" alt="Harvesters photo, full pipeline">
+        <figcaption class="figure-caption text-center">Harvesters<br>G: (17, 60)  R: (14, 124)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_icon_bw.jpg" class="figure-img img-fluid rounded" alt="Icon photo, full pipeline">
+        <figcaption class="figure-caption text-center">Icon<br>G: (17, 42)  R: (23, 90)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_ilemselga_bw.jpg" class="figure-img img-fluid rounded" alt="Ilemselga photo, full pipeline">
+        <figcaption class="figure-caption text-center">Ilemselga<br>G: (7, 40)  R: (11, 131)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_melons_bw.jpg" class="figure-img img-fluid rounded" alt="Melons photo, full pipeline">
+        <figcaption class="figure-caption text-center">Melons<br>G: (10, 80)  R: (13, 177)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_religous_painting_bw.jpg" class="figure-img img-fluid rounded" alt="Religious painting photo, full pipeline">
+        <figcaption class="figure-caption text-center">Religious Painting<br>G: (6, 30)  R: (6, 70)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_self_portrait_bw.jpg" class="figure-img img-fluid rounded" alt="Self portrait photo, full pipeline">
+        <figcaption class="figure-caption text-center">Self Portrait<br>G: (29, 78)  R: (37, 175)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_siren_bw.jpg" class="figure-img img-fluid rounded" alt="Siren photo, full pipeline">
+        <figcaption class="figure-caption text-center">Siren<br>G: (-6, 49)  R: (-24, 96)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_three_generations_bw.jpg" class="figure-img img-fluid rounded" alt="Three generations photo, full pipeline">
+        <figcaption class="figure-caption text-center">Three Generations<br>G: (12, 54)  R: (9, 111)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_wharf_bw.jpg" class="figure-img img-fluid rounded" alt="Wharf photo, full pipeline">
+        <figcaption class="figure-caption text-center">Wharf<br>G: (-7, 15)  R: (-16, 83)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_test1_bw.jpg" class="figure-img img-fluid rounded" alt="Riverside town photo, full pipeline">
+        <figcaption class="figure-caption text-center">Riverside Town<br>G: (16, 50)  R: (10, 94)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_test2_bw.jpg" class="figure-img img-fluid rounded" alt="Sunflower field photo, full pipeline">
+        <figcaption class="figure-caption text-center">Sunflower Field<br>G: (-5, 21)  R: (-8, 234)</figcaption>
+      </figure>
+    </div>
+    <div class="col-6 col-md-4">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project1/out_test3_bw.jpg" class="figure-img img-fluid rounded" alt="Sphinx figurine photo, full pipeline">
+        <figcaption class="figure-caption text-center">Sphinx Figurine<br>G: (27, 21)  R: (53, 110)</figcaption>
+      </figure>
+    </div>
+  </div>
 </div>

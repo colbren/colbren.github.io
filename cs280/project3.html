@@ -14,7 +14,7 @@ layout: home
   </p>
 
   <p>
-    Throughout, I use the linear flow-matching convention where <strong>time 0 is pure noise and time 1 is a clean image</strong>:
+    Throughout, I use the linear flow-matching convention where time 0 is pure noise and time 1 is a clean image:
   </p>
   \[
   x_t = (1 - t)\,\epsilon + t\,x_1, \qquad \epsilon \sim \mathcal{N}(0, I), \qquad \frac{dx_t}{dt} = x_1 - \epsilon
@@ -308,9 +308,9 @@ layout: home
     </div>
   </div>
   <ul>
-    <li><strong>The carrot</strong> is my favorite. At 0.02 it is a glossy 3D capsule. At 0.04&ndash;0.06 it becomes a realistic clay-like carrot with leaves, in the same pose as my drawing. From 0.10 on, it stays a drawing, and the texture lines only come back at 0.25.</li>
-    <li><strong>The rabbit</strong> turns into portrait photos of people at 0.02&ndash;0.04 (the portrait bias again), and then into a gray rabbit with my drawing's silhouette at 0.06. From 0.10 on, it is my drawing with small changes to the face.</li>
-    <li><strong><em>The Scream</em></strong> becomes a photo of a woman at 0.02&ndash;0.04 and hands holding a tablet at 0.06&ndash;0.14, still in the painting's orange and brown palette. At 0.25 the bridge, the railing and the figure come back as a cross between a photo and the painting.</li>
+    <li><strong>The carrot</strong>: at 0.02 it is a glossy 3D capsule. At 0.04&ndash;0.06 it becomes a realistic clay-like carrot with leaves, in the same pose as my drawing. From 0.10 on, it stays a drawing, and the texture lines only come back at 0.25.</li>
+    <li><strong>The rabbit</strong>: turns into portrait photos of people at 0.02&ndash;0.04, and then into a gray rabbit with my drawing's silhouette at 0.06. From 0.10 on, it is my drawing with small changes to the face.</li>
+    <li><strong>The Scream</strong>: becomes a distorted photo of a woman at 0.02&ndash;0.04 and hands holding a tablet at 0.06&ndash;0.10, still in the painting's orange and brown palette. At 0.25 the bridge, the railing and the figure come back as a cross between a photo and the painting.</li>
   </ul>
   <p>
     Drawings stay drawings much earlier than photos change. The flat white background and thick black outlines are strong, low-frequency features that survive a lot of noise. Once they are visible, the model completes the image as a drawing, even though the prompt asks for a photo.
@@ -342,7 +342,7 @@ layout: home
     </div>
   </div>
   <ul>
-    <li><strong>Rocket:</strong> at 0.02 the scene is completely new (two rockets and a launch tower). At 0.04&ndash;0.14 a single white rocket stands exactly where the Campanile was, and the trees turn into launch-pad scaffolding. At 0.25 the rocket picks up the Campanile's belfry windows, and at 0.5 the tower is back.</li>
+    <li><strong>Rocket:</strong> at 0.02 the scene is completely new with two rockets and a launch tower. At 0.04&ndash;0.14 a single white rocket stands exactly where the Campanile was, and the trees turn into launch-pad scaffolding. At 0.25 the rocket picks up the Campanile's belfry windows, and at 0.5 the tower is back.</li>
     <li><strong>White House:</strong> at 0.02 it is a white colonial mansion with a garbled text banner (the model can't spell). At 0.04&ndash;0.06 it is a white house with columns and a portico. At 0.10&ndash;0.14 the house keeps my building's three arches but gets columns and a dark roof.</li>
     <li><strong>Dog in a park:</strong> at 0.02 it is a real dog in a park, and at 0.04 a realistic puppy with leftover pixel-art outlines. From 0.06 on, the pixel art wins.</li>
   </ul>
@@ -365,7 +365,7 @@ layout: home
     <div class="col-12 col-md-6">
       <figure class="figure w-100">
         <img src="{{ site.baseurl }}/img/project3/anagram_campfire_old_man.jpg" class="figure-img img-fluid rounded" alt="Anagram: people at a campfire upright, old man when rotated">
-        <figcaption class="figure-caption text-center">Upright: "an oil painting of people at a campfire". Rotated: an oil painting of anold man.</figcaption>
+        <figcaption class="figure-caption text-center">Upright: "an oil painting of people at a campfire". Rotated: an oil painting of an old man.</figcaption>
       </figure>
     </div>
     <div class="col-12 col-md-6">
@@ -805,9 +805,9 @@ layout: home
   <!-- ============================== Learned ============================== -->
   <h2 class="h3 mt-5 mb-3 border-bottom pb-2" id="learned">What I Learned</h2>
   <p>
-    The most surprising thing to me is how much one small piece of code can do. Every result in Part A, from denoising to editing, anagrams, hybrids and the logo, uses the same Euler loop. The only thing that changes is <em>where</em> the loop starts and <em>which velocity</em> it follows. Starting partway along the path gives editing, and the starting time is a direct knob between "keep my image" and "follow the prompt". Changing the velocity, whether by guiding it, averaging it across views, or splitting it into frequency bands, gives the illusions. Comparing one-step with iterative denoising also made it concrete why we integrate at all: a single prediction is the blurry average of everything that could be under the noise, while many small steps let the model commit to one sharp answer.
+    The most surprising thing to me is how much one small piece of code can do. Every result in Part A, from denoising to editing, anagrams, hybrids and the logo, uses the same Euler loop. The only thing that changes is where the loop starts and which velocity it follows. Starting partway along the path gives editing, and the starting time is a direct knob between "keep my image" and "follow the prompt". Changing the velocity, whether by guiding it, averaging it across views, or splitting it into frequency bands, gives the illusions. 
   </p>
   <p>
-    Part B showed me the same idea from the training side. The pure-noise denoiser was the clearest lesson: with an MSE loss, a network that can't tell which answer is right returns the average of all of them, and here that was the mean digit. Flow matching gets around this by only asking for a small step at a time. Each step is still an average, but an average over a much smaller set of possible digits, and these averages chain together into one sharp sample. The leftover ambiguity is still visible in the time-only model. When nothing tells it which digit to draw, it sometimes lands between two of them. A class label with guidance removes almost all of that, and so does a more capable model trained for longer. I was also surprised how much the starting noise decides on its own: different models, and even differently trained runs, often turn the same noise into the same digit with the same slant. Finally, the scheduler experiment taught me not to treat a recipe's settings as necessary. A single sensible constant learning rate did just as well as the exponential decay.
+    Part B showed me the same idea from the training side. The pure-noise denoiser showed that with an MSE loss, a network that can't tell which answer is right and returns the average of all of them. Flow matching gets around this by only asking for a small step at a time. Each step is still an average, but an average over a much smaller set of possible digits, and these averages chain together into one sharp sample. The leftover ambiguity is still visible in the time-only model. When nothing tells it which digit to draw, it sometimes lands between two of them. A class label with guidance removes almost all of that, and so does a more capable model trained for longer.
   </p>
 </div>

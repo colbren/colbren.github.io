@@ -1,0 +1,334 @@
+---
+title: "CS280 Project 4: Image Warping and Mosaicing"
+layout: home
+---
+
+<div class="container py-5" style="max-width: 900px;">
+  <p><a href="{{ site.baseurl }}/cs280/">&larr; Back to CS280</a></p>
+
+  <h1 class="display-5">Project 4: Image Warping and Mosaicing</h1>
+  <h2 class="h4 text-muted">Part A</h2>
+
+  <p class="mt-3">
+    In this part I shoot overlapping photos by rotating the camera in place, recover the homography between each pair from point correspondences, and use inverse warping to rectify planar objects and stitch the photos into mosaics. Everything below is my own numpy code. The homography is a least-squares solve with <code>np.linalg.lstsq</code>, and both interpolation methods are written by hand. No <code>findHomography</code>, <code>warpPerspective</code>, <code>skimage.transform</code> or <code>griddata</code> is used. For bells &amp; whistles, I project the mosaics onto a cylinder and a sphere, sampling directly from the original photos.
+  </p>
+
+  <!-- ===================================================================== -->
+  <h2 class="h3 mt-5 mb-3 border-bottom pb-2" id="a1">A.1: Shooting the Pictures</h2>
+  <p>
+    I shot three sets on my phone (2160&times;3840, portrait), rotating the camera between shots and keeping roughly 40&ndash;60% overlap. Between neighbors the camera turned 14&ndash;23&deg;, which I measured in A.5. The scenes are a studio apartment, a building lobby with a large painted mural, and a street corner at night. The night set has four photos covering about 95&deg; in total. Each photo spans about 49&deg; horizontally.
+  </p>
+  <div class="row g-3">
+    <div class="col-12">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project4/mosaic1_sources.jpg" class="figure-img img-fluid rounded" alt="Three source photos of a studio apartment: kitchen on the left, entry door in the middle, bed and couch on the right">
+        <figcaption class="figure-caption text-center">Set 1: apartment (left, middle, right)</figcaption>
+      </figure>
+    </div>
+    <div class="col-12">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project4/mosaic2_sources.jpg" class="figure-img img-fluid rounded" alt="Three source photos of a lobby with a colorful mural on the left wall and a TV on a wood wall on the right">
+        <figcaption class="figure-caption text-center">Set 2: lobby (left, middle, right)</figcaption>
+      </figure>
+    </div>
+    <div class="col-12">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project4/mosaic3_sources.jpg" class="figure-img img-fluid rounded" alt="Four source photos of a street intersection at night with a traffic pole and crosswalks">
+        <figcaption class="figure-caption text-center">Set 3: street corner at night (left, mid-left, mid-right, right)</figcaption>
+      </figure>
+    </div>
+  </div>
+  <p>
+    The night photos vary a lot in exposure. The phone's night mode metered each shot differently, which comes up again in A.4. Set 1 also has objects about a meter from the camera (the hampers and the couch arm). A handheld phone never rotates exactly about its center of projection, so those objects show some parallax.
+  </p>
+
+  <!-- ===================================================================== -->
+  <h2 class="h3 mt-5 mb-3 border-bottom pb-2" id="a2">A.2: Recovering Homographies</h2>
+  <p>
+    A homography maps a point \((x, y)\) in one image to \((x', y')\) in the other:
+  </p>
+  \[
+  \begin{bmatrix} w x' \\ w y' \\ w \end{bmatrix} =
+  \begin{bmatrix} a & b & c \\ d & e & f \\ g & h & 1 \end{bmatrix}
+  \begin{bmatrix} x \\ y \\ 1 \end{bmatrix}
+  \quad\Longrightarrow\quad
+  x' = \frac{a x + b y + c}{g x + h y + 1}, \qquad y' = \frac{d x + e y + f}{g x + h y + 1}
+  \]
+  <p>
+    Multiplying out the denominators makes both equations linear in the 8 unknowns, so each correspondence contributes two rows of \(A\mathbf{h} = \mathbf{b}\):
+  </p>
+  \[
+  \begin{bmatrix}
+  x & y & 1 & 0 & 0 & 0 & -x x' & -y x' \\
+  0 & 0 & 0 & x & y & 1 & -x y' & -y y'
+  \end{bmatrix}
+  \begin{bmatrix} a & b & c & d & e & f & g & h \end{bmatrix}^{\top}
+  =
+  \begin{bmatrix} x' \\ y' \end{bmatrix}
+  \]
+  <p>
+    <code>computeH(im1_pts, im2_pts)</code> stacks these rows for all \(n\) points and solves the overdetermined \(2n \times 8\) system with least squares. With pixel coordinates in the thousands, the \(-x x'\) columns are around \(10^7\) while the constant columns are 1, which makes the system badly conditioned. So I first normalize each point set (Hartley normalization: subtract the mean, then scale so the mean distance from the origin is \(\sqrt{2}\)), solve, and undo the normalization: \(H = T_2^{-1} \tilde{H} T_1\).
+  </p>
+  <p>
+    <strong>Correspondences.</strong> Each pair has 20 correspondences spread across the overlap. To get precise sub-pixel locations, I did not click them by hand. Candidate matches were proposed by SIFT descriptor matching, my own RANSAC loop (built on <code>computeH</code>) kept the ones consistent with a single homography, and farthest-point sampling picked 20 of those that cover the overlap evenly. The points are saved as JSON, and my <code>ginput</code>-style tool (<code>click_points.py</code>) can view, edit or re-click any pair.
+  </p>
+  <div class="row g-3">
+    <div class="col-12 col-md-6">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project4/mosaic2_points_img2-left.jpg" class="figure-img img-fluid rounded" alt="20 numbered correspondences between the lobby left and middle photos">
+        <figcaption class="figure-caption text-center">Set 2: left &harr; middle</figcaption>
+      </figure>
+    </div>
+    <div class="col-12 col-md-6">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project4/mosaic2_points_img2-right.jpg" class="figure-img img-fluid rounded" alt="20 numbered correspondences between the lobby right and middle photos">
+        <figcaption class="figure-caption text-center">Set 2: right &harr; middle</figcaption>
+      </figure>
+    </div>
+    <div class="col-12 col-md-6">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project4/mosaic1_points_img1-left.jpg" class="figure-img img-fluid rounded" alt="Correspondences between the apartment left and middle photos">
+        <figcaption class="figure-caption text-center">Set 1: left &harr; middle</figcaption>
+      </figure>
+    </div>
+    <div class="col-12 col-md-6">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project4/mosaic3_points_img3-midright.jpg" class="figure-img img-fluid rounded" alt="Correspondences between the street mid-right and mid-left photos">
+        <figcaption class="figure-caption text-center">Set 3: mid-right &harr; mid-left</figcaption>
+      </figure>
+    </div>
+  </div>
+  <p>
+    For example, here is the system for set 2, left &rarr; middle, in full-resolution pixel coordinates. These are the first 3 of 20 correspondences, and \(A\) is \(40 \times 8\):
+  </p>
+<pre class="bg-light p-3 rounded small"><code>A h = b
+[ 1596.1  1844.0  1.0     0.0     0.0  0.0    -990380.0  -1144202.0 ] h =  620.5
+[    0.0     0.0  0.0  1596.1  1844.0  1.0   -2983749.3  -3447173.6 ] h = 1869.4
+[ 1722.8  3037.8  1.0     0.0     0.0  0.0   -1331207.6  -2347308.1 ] h =  772.7
+[    0.0     0.0  0.0  1722.8  3037.8  1.0   -5233177.3  -9227621.3 ] h = 3037.6
+[ 1074.1  2432.8  1.0     0.0     0.0  0.0     -77979.7   -176621.3 ] h =   72.6
+[    0.0     0.0  0.0  1074.1  2432.8  1.0   -2702220.8  -6120438.2 ] h = 2515.8
+  ...</code></pre>
+  <p>The recovered homography (left image &rarr; middle image) is</p>
+  \[
+  H_{\text{left}\to\text{mid}} =
+  \begin{bmatrix}
+  1.4119 & 0.0277 & -1497.78 \\
+  0.3527 & 1.2773 & -480.51 \\
+  0.000200 & -0.0000080 & 1
+  \end{bmatrix}
+  \]
+  <p>
+    The large \(g = 0.0002\) term is the perspective part. Points on the left image's right edge (\(x \approx 2160\)) get divided by about 1.4 and points on its left edge by about 1, which is what turns the left image's rectangle into a trapezoid in the middle image's frame.
+  </p>
+  <p>The fits are tight for every pair:</p>
+  <table class="table table-sm w-auto mx-auto">
+    <thead><tr><th>pair</th><th>mean reprojection error</th><th>max</th></tr></thead>
+    <tbody>
+      <tr><td>set 1 left &rarr; middle</td><td>1.74 px</td><td>3.15 px</td></tr>
+      <tr><td>set 1 right &rarr; middle</td><td>1.51 px</td><td>2.72 px</td></tr>
+      <tr><td>set 2 left &rarr; middle</td><td>1.22 px</td><td>2.33 px</td></tr>
+      <tr><td>set 2 right &rarr; middle</td><td>1.49 px</td><td>2.82 px</td></tr>
+      <tr><td>set 3 left &rarr; mid-left</td><td>1.30 px</td><td>2.49 px</td></tr>
+      <tr><td>set 3 mid-right &rarr; mid-left</td><td>1.22 px</td><td>2.74 px</td></tr>
+      <tr><td>set 3 right &rarr; mid-right</td><td>1.37 px</td><td>3.27 px</td></tr>
+    </tbody>
+  </table>
+  <p>
+    These errors are measured on 3840-pixel-tall images. Set 1 is the worst, which fits its parallax: no single homography can align both the far wall and the hamper a meter away.
+  </p>
+
+  <!-- ===================================================================== -->
+  <h2 class="h3 mt-5 mb-3 border-bottom pb-2" id="a3">A.3: Warping the Images</h2>
+  <p>
+    <code>warpImageNearestNeighbor(im, H)</code> and <code>warpImageBilinear(im, H)</code> both use <strong>inverse warping</strong>:
+  </p>
+  <ol>
+    <li>Push the four corners through \(H\) to get the output bounding box.</li>
+    <li>For every output pixel \(p\), compute its pre-image \(H^{-1} p\) in the source image.</li>
+    <li>Sample the source there.</li>
+  </ol>
+  <p>
+    Every output pixel gets exactly one lookup, so there are no holes. I treat \((0, 0)\) as the <em>center</em> of the top-left pixel.
+  </p>
+  <ul>
+    <li><strong>Nearest neighbor</strong> rounds \((u, v)\) to the closest pixel center, \(\lfloor u + 0.5 \rfloor\), and copies it.</li>
+    <li><strong>Bilinear</strong> takes the four surrounding pixel centers \((u_0, v_0) \ldots (u_0{+}1, v_0{+}1)\) and weights each by the area of the opposite sub-rectangle: \(I = (1-\alpha)(1-\beta) I_{00} + \alpha (1-\beta) I_{10} + (1-\alpha)\beta I_{01} + \alpha\beta I_{11}\), with \(\alpha = u - u_0\) and \(\beta = v - v_0\). A sample counts as valid only if it lies inside the pixel-center grid, \(0 \le u \le w-1\).</li>
+  </ul>
+  <p>
+    Both functions return an <strong>alpha channel</strong> (1 where the pre-image is inside the source, 0 elsewhere), so later steps can tell "black pixel" from "no data". Rows are processed in chunks so that large canvases fit in memory.
+  </p>
+  <p>
+    One subtlety came up with ground-plane rectification. If the warp's vanishing line crosses the image, part of the image lands "behind the camera" and the warped image is unbounded. A homography is only defined up to sign, so I orient \(H\) so that the image center has a positive homogeneous \(w\). An output pixel is then valid only if its pre-image's \(w\) is positive, which drops pixels on the wrong side of the horizon instead of folding them back into the picture.
+  </p>
+
+  <h3 class="h4 mt-5 mb-3" id="rectification">Rectification</h3>
+  <p>
+    To test the warping, I map the four corners of a known rectangle (in the order top-left, top-right, bottom-right, bottom-left) onto an axis-aligned rectangle with the object's real aspect ratio. The target rectangle is centered on the object with the same area, so the result stays at about the input resolution. I located the corners on zoomed-in crops. The lid has rounded corners, so I fit a line to each edge and intersected them.
+  </p>
+  <div class="row g-3">
+    <div class="col-12">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project4/rectify_door_figure.jpg" class="figure-img img-fluid rounded" alt="Apartment photo with the entry door outlined, and the rectified result with straight vertical door edges">
+        <figcaption class="figure-caption text-center">Door (assumed 3&prime;&times;7&prime;, aspect 0.43). The camera was tilted down, so the door's sides converged. After rectification they are vertical.</figcaption>
+      </figure>
+    </div>
+    <div class="col-12">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project4/rectify_tv_figure.jpg" class="figure-img img-fluid rounded" alt="Lobby photo with the TV outlined at a steep angle, and the rectified result showing the wood wall head-on">
+        <figcaption class="figure-caption text-center">TV screen (16:9). The wall was seen at a steep angle and now appears head-on.</figcaption>
+      </figure>
+    </div>
+    <div class="col-12">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project4/rectify_lid_figure.jpg" class="figure-img img-fluid rounded" alt="Street photo with a sidewalk utility lid outlined, and the rectified bird's-eye view of the sidewalk and crosswalk">
+        <figcaption class="figure-caption text-center">Ground plane: a sidewalk utility lid (assumed 30&Prime;&times;17&Prime;) turns the shot into a bird's-eye view</figcaption>
+      </figure>
+    </div>
+  </div>
+  <p>
+    Each rectification is checked by things that weren't used to compute it:
+  </p>
+  <ul>
+    <li><strong>Door:</strong> the door frame and the wall edges beside it also come out vertical.</li>
+    <li><strong>TV:</strong> the wall paneling and the shelf below come out horizontal.</li>
+    <li><strong>Lid:</strong> the second lid next to it becomes a rectangle with right-angle corners, the crosswalk stripes come out parallel, and the red curb comes out straight.</li>
+  </ul>
+  <p>
+    The black region in the lid result is ground outside the original photo. The region above the street is cut off at the horizon.
+  </p>
+
+  <h3 class="h4 mt-5 mb-3" id="interp">Nearest neighbor vs. bilinear</h3>
+  <div class="row g-3">
+    <div class="col-12">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project4/rectify_tv_interp_zoom.jpg" class="figure-img img-fluid rounded" alt="Zoomed crop of the rectified TV picture: nearest neighbor is blocky, bilinear is smooth">
+        <figcaption class="figure-caption text-center">Crop of the rectified TV at 1:1. The TV was far away and foreshortened, so the warp magnifies it about 2&times; horizontally.</figcaption>
+      </figure>
+    </div>
+    <div class="col-12">
+      <figure class="figure w-100">
+        <img src="{{ site.baseurl }}/img/project4/rectify_lid_interp_zoom.jpg" class="figure-img img-fluid rounded" alt="Zoomed crop of the rectified lid: nearest neighbor shows jagged edges, bilinear smooth edges">
+        <figcaption class="figure-caption text-center">Crop of the rectified lid at 1:1</figcaption>
+      </figure>
+    </div>
+  </div>
+  <table class="table table-sm w-auto mx-auto">
+    <thead><tr><th>output</th><th>size</th><th>nearest</th><th>bilinear</th></tr></thead>
+    <tbody>
+      <tr><td>door</td><td>2420&times;4119 (10.0 MP)</td><td>0.35 s</td><td>0.79 s</td></tr>
+      <tr><td>TV</td><td>1423&times;1348 (1.9 MP)</td><td>0.07 s</td><td>0.16 s</td></tr>
+      <tr><td>lid</td><td>1456&times;1299 (1.9 MP)</td><td>0.06 s</td><td>0.13 s</td></tr>
+    </tbody>
+  </table>
+  <p>
+    <strong>Quality:</strong> where the warp magnifies, nearest neighbor duplicates source pixels. You can see blocky stair-steps on the TV's mountains and furniture and jagged diagonal edges on the lid. Bilinear blends the four neighbors, so edges and gradients stay smooth. It is slightly softer, because each output pixel is a weighted average, but at 1:1 scale it looks much more natural. In regions the warp shrinks, the two look closer, and both can alias because neither one pre-filters.
+  </p>
+  <p>
+    <strong>Speed:</strong> bilinear consistently takes about 2.2&times; as long. It reads four pixels instead of one and does three interpolations per channel. The cost of computing \(H^{-1}p\) for each pixel is the same for both. For the mosaics I use bilinear everywhere, since the extra fraction of a second is worth avoiding the jaggies.
+  </p>
+
+  <!-- ===================================================================== -->
+  <h2 class="h3 mt-5 mb-3 border-bottom pb-2" id="a4">A.4: Blending the Images into a Mosaic</h2>
+  <p><strong>Procedure</strong> (one-shot, at half resolution, 1080&times;1920 per photo):</p>
+  <ol>
+    <li><strong>Reference frame.</strong> The middle photo stays unwarped; for set 3 it is the mid-left photo. Every other photo is warped straight into its frame. For images that don't overlap the reference directly, I chain the pairwise homographies, e.g. \(H_{\text{right}\to\text{ref}} = H_{\text{mid-right}\to\text{mid-left}}\, H_{\text{right}\to\text{mid-right}}\). Each photo is warped only once.</li>
+    <li><strong>Canvas.</strong> The canvas is the union of all warped bounding boxes. Each warped image keeps its offset in that canvas.</li>
+    <li><strong>Weights.</strong> Each photo gets a "tent" weight, 1 at its center falling linearly to 0 at every edge: \(w(x, y) = (1 - |2x/(W{-}1) - 1|)\,(1 - |2y/(H{-}1) - 1|)\). I append it as an extra channel before warping, so it is warped by exactly the same bilinear lookup as the colors.</li>
+    <li><strong>Exposure.</strong> Starting at the reference and working outward, each image gets a per-channel gain that makes its mean color in the overlap match the images already placed. Sets 1 and 2 only needed gains of 0.92&ndash;1.0. In set 3, night mode exposed the mid-left photo much darker than its neighbors, giving gains of &times;1.4&ndash;1.6 for the left photo and &times;0.8 for the right two.</li>
+    <li><strong>Blend.</strong> I compare three blends:
+      <ul>
+        <li><em>Overwrite</em> pastes images on top of each other, as a baseline.</li>
+        <li><em>Feather</em> takes the per-pixel weighted average \(\sum_i w_i I_i / \sum_i w_i\).</li>
+        <li><em>Two-band</em> is a 2-level Laplacian pyramid. Each warped image is split into a low band (Gaussian blur, \(\sigma = 6\) px) and a high band (the residual). The low bands are feathered. For the high bands, each pixel takes the image with the largest weight. I blur the low band with a normalized convolution, \(G(\alpha I) / G(\alpha)\), so the black outside each image doesn't bleed in.</li>
+      </ul>
+    </li>
+  </ol>
+  <p>
+    Images are added one at a time into running sums, so memory stays bounded by the canvas.
+  </p>
+  <div class="row g-3">
+    <div class="col-4"><figure class="figure w-100"><img src="{{ site.baseurl }}/img/project4/mosaic2_warped_img2-left.jpg" class="figure-img img-fluid rounded" alt="Lobby left photo warped into the middle photo's frame"><figcaption class="figure-caption text-center">left, warped</figcaption></figure></div>
+    <div class="col-4"><figure class="figure w-100"><img src="{{ site.baseurl }}/img/project4/mosaic2_warped_img2-middle.jpg" class="figure-img img-fluid rounded" alt="Lobby middle photo, unwarped reference"><figcaption class="figure-caption text-center">middle (reference)</figcaption></figure></div>
+    <div class="col-4"><figure class="figure w-100"><img src="{{ site.baseurl }}/img/project4/mosaic2_warped_img2-right.jpg" class="figure-img img-fluid rounded" alt="Lobby right photo warped into the middle photo's frame"><figcaption class="figure-caption text-center">right, warped</figcaption></figure></div>
+    <div class="col-12 col-md-6 mx-auto"><figure class="figure w-100"><img src="{{ site.baseurl }}/img/project4/mosaic2_weights.jpg" class="figure-img img-fluid rounded" alt="Warped tent weights of the three lobby images, shown in red, blue and green"><figcaption class="figure-caption text-center">Warped weights (one color per image). The weights cross over in the overlaps.</figcaption></figure></div>
+  </div>
+
+  <h3 class="h4 mt-5 mb-3" id="mosaic1">Mosaic 1: apartment</h3>
+  <div class="row g-3">
+    <div class="col-12"><figure class="figure w-100"><img src="{{ site.baseurl }}/img/project4/mosaic1_mosaic_two-band.jpg" class="figure-img img-fluid rounded" alt="Planar mosaic of the apartment, two-band blended"><figcaption class="figure-caption text-center">Two-band blend</figcaption></figure></div>
+    <div class="col-6"><figure class="figure w-100"><img src="{{ site.baseurl }}/img/project4/mosaic1_mosaic_overwrite.jpg" class="figure-img img-fluid rounded" alt="Apartment mosaic with images simply pasted over each other"><figcaption class="figure-caption text-center">Overwrite: visible edges</figcaption></figure></div>
+    <div class="col-6"><figure class="figure w-100"><img src="{{ site.baseurl }}/img/project4/mosaic1_mosaic_feather.jpg" class="figure-img img-fluid rounded" alt="Apartment mosaic with feathered blending"><figcaption class="figure-caption text-center">Feather</figcaption></figure></div>
+    <div class="col-12"><figure class="figure w-100"><img src="{{ site.baseurl }}/img/project4/zoom_blend_set1.jpg" class="figure-img img-fluid rounded" alt="Close-up of the hamper and couch: overwrite, feather with a ghosted double hamper, two-band with a sharp but cut hamper"><figcaption class="figure-caption text-center">Close-up at full mosaic resolution: overwrite / feather / two-band</figcaption></figure></div>
+  </div>
+  <p>
+    The far wall, door and kitchen align cleanly. The close-up shows the parallax limit. The see-through hamper is about a meter away, so the left and middle photos disagree on where it is. Feathering averages the two versions and produces a ghosted double hamper. Two-band keeps the high frequencies from a single image, so the hamper is sharp, but you can see where the selection switches images. A better fix would be shooting on a tripod that rotates around the lens.
+  </p>
+
+  <h3 class="h4 mt-5 mb-3" id="mosaic2">Mosaic 2: lobby</h3>
+  <div class="row g-3">
+    <div class="col-12"><figure class="figure w-100"><img src="{{ site.baseurl }}/img/project4/mosaic2_mosaic_two-band.jpg" class="figure-img img-fluid rounded" alt="Planar mosaic of the lobby, two-band blended"><figcaption class="figure-caption text-center">Two-band blend</figcaption></figure></div>
+    <div class="col-6"><figure class="figure w-100"><img src="{{ site.baseurl }}/img/project4/mosaic2_mosaic_overwrite.jpg" class="figure-img img-fluid rounded" alt="Lobby mosaic with images pasted over each other"><figcaption class="figure-caption text-center">Overwrite</figcaption></figure></div>
+    <div class="col-6"><figure class="figure w-100"><img src="{{ site.baseurl }}/img/project4/mosaic2_mosaic_feather.jpg" class="figure-img img-fluid rounded" alt="Lobby mosaic with feathered blending"><figcaption class="figure-caption text-center">Feather</figcaption></figure></div>
+  </div>
+  <p>
+    This set has the least parallax, since everything is several meters away. With overwrite, you can see the brightness steps on the ceiling and the edge of the left photo cutting through the mural. Both blends are seamless, and the mural's shapes line up across the overlap. The planar projection stretches the left side, because the left photo is 23&deg; from the reference.
+  </p>
+
+  <h3 class="h4 mt-5 mb-3" id="mosaic3">Mosaic 3: street corner at night (4 photos)</h3>
+  <div class="row g-3">
+    <div class="col-12"><figure class="figure w-100"><img src="{{ site.baseurl }}/img/project4/mosaic3_mosaic_two-band.jpg" class="figure-img img-fluid rounded" alt="Planar mosaic of the night street corner, two-band blended"><figcaption class="figure-caption text-center">Two-band blend</figcaption></figure></div>
+    <div class="col-6"><figure class="figure w-100"><img src="{{ site.baseurl }}/img/project4/mosaic3_mosaic_overwrite.jpg" class="figure-img img-fluid rounded" alt="Street mosaic with images pasted over each other, showing large brightness steps"><figcaption class="figure-caption text-center">Overwrite, no gain compensation</figcaption></figure></div>
+    <div class="col-6"><figure class="figure w-100"><img src="{{ site.baseurl }}/img/project4/mosaic3_mosaic_feather.jpg" class="figure-img img-fluid rounded" alt="Street mosaic with gain compensation and feathering"><figcaption class="figure-caption text-center">Gain compensation + feather</figcaption></figure></div>
+    <div class="col-12"><figure class="figure w-100"><img src="{{ site.baseurl }}/img/project4/zoom_blend_set3.jpg" class="figure-img img-fluid rounded" alt="Close-up of the sidewalk at the pole: overwrite with hard brightness steps, feather smooth, two-band with a faint vertical texture seam"><figcaption class="figure-caption text-center">Close-up: overwrite / feather / two-band</figcaption></figure></div>
+  </div>
+  <p>
+    Here exposure is the main problem: overwrite shows hard brightness steps where the photos meet. Gain compensation removes most of the difference, and feathering hides the rest. In this close-up, two-band is actually slightly worse: there is a faint vertical seam to the right of the pole. Night mode denoised each photo differently, so the sidewalk texture is sharper in one photo than the other. Switching the high band abruptly from one image to the next makes that difference visible. The dark smudge by the pole is my own shadow, which moved between shots.
+  </p>
+
+  <!-- ===================================================================== -->
+  <h2 class="h3 mt-5 mb-3 border-bottom pb-2" id="a5">A.5 Bells &amp; Whistles: Cylindrical and Spherical Mosaics</h2>
+  <p>
+    A planar mosaic stretches whatever is far from the reference. Projecting onto a cylinder instead keeps the stretching uniform across the panorama. For that I need the camera itself (focal length and rotations), not just homographies.
+  </p>
+  <ol>
+    <li>
+      <strong>Camera model.</strong> For a camera that only rotates, \(H = K R K^{-1}\) with \(K = \begin{bmatrix} f & 0 & c_x \\ 0 & f & c_y \\ 0 & 0 & 1 \end{bmatrix}\).
+      <ul>
+        <li><em>Initialization:</em> grid-search \(f\), assume the principal point is the image center, and project each \(K^{-1} H K\) to its nearest rotation (SVD). This explains the correspondences only to within 41 px on average.</li>
+        <li><em>Refinement:</em> a small bundle adjustment (<code>scipy.optimize.least_squares</code>) jointly fits \(f\), \((c_x, c_y)\) and every photo's rotation, minimizing the reprojection error of all 140 correspondences, mapped in both directions. \(f\) and \((c_x, c_y)\) are shared across all three sets, since they were taken with the same phone. The result is \(f = 2354\) px and a principal point of \((1072, 1904)\), 17 px from the image center, with a mean error of <strong>2.3 px</strong>. That is close to the 1.2&ndash;1.7 px of the unconstrained 8-parameter homographies.</li>
+      </ul>
+      Before the refinement, the cylindrical mosaics had 10&ndash;20 px seams.
+    </li>
+    <li><strong>Straightening.</strong> I use the mean panning axis of the rotations as the cylinder's axis instead of the reference camera's "up". This corrects a 1.5&ndash;3&deg; tilt of the reference shots, which would otherwise make the horizon bend into a wave.</li>
+    <li>
+      <strong>Inverse sampling from the originals.</strong> For each output pixel \((u, v)\):
+      <ol type="a">
+        <li>Form the 3D ray: \(\theta = u/f\), \(\mathbf{d} = (\sin\theta,\; v/f,\; \cos\theta)\) for the cylinder, or \((\cos\phi\sin\theta,\; \sin\phi,\; \cos\phi\cos\theta)\) with \(\phi = v/f\) for the sphere.</li>
+        <li>Rotate it into camera \(i\): \(R_i^{\top} W^{\top} \mathbf{d}\).</li>
+        <li>Project with \(K\) and sample the <em>original, full-resolution</em> photo bilinearly.</li>
+      </ol>
+      Each photo is resampled exactly once, and the result is at full resolution (about 4000&times;3900). The cylinder radius is \(f\), so the center of the panorama has the same pixel density as the photos.
+    </li>
+    <li><strong>Blending.</strong> I reuse the same gain compensation and two-band blend. The tent weights are sampled along with the colors.</li>
+  </ol>
+  <div class="row g-3">
+    <div class="col-12"><figure class="figure w-100"><img src="{{ site.baseurl }}/img/project4/mosaic3_cylinder_two-band.jpg" class="figure-img img-fluid rounded" alt="Cylindrical panorama of the night street corner"><figcaption class="figure-caption text-center">Set 3, cylindrical (about 95&deg; across 4 photos)</figcaption></figure></div>
+    <div class="col-12 col-md-6"><figure class="figure w-100"><img src="{{ site.baseurl }}/img/project4/mosaic1_cylinder_two-band.jpg" class="figure-img img-fluid rounded" alt="Cylindrical panorama of the apartment"><figcaption class="figure-caption text-center">Set 1, cylindrical</figcaption></figure></div>
+    <div class="col-12 col-md-6"><figure class="figure w-100"><img src="{{ site.baseurl }}/img/project4/mosaic2_cylinder_two-band.jpg" class="figure-img img-fluid rounded" alt="Cylindrical panorama of the lobby"><figcaption class="figure-caption text-center">Set 2, cylindrical</figcaption></figure></div>
+    <div class="col-12 col-md-6"><figure class="figure w-100"><img src="{{ site.baseurl }}/img/project4/mosaic3_mosaic_two-band.jpg" class="figure-img img-fluid rounded" alt="Planar mosaic of the street corner for comparison"><figcaption class="figure-caption text-center">Set 3, planar (for comparison)</figcaption></figure></div>
+    <div class="col-12 col-md-6"><figure class="figure w-100"><img src="{{ site.baseurl }}/img/project4/mosaic3_sphere_two-band.jpg" class="figure-img img-fluid rounded" alt="Spherical panorama of the street corner"><figcaption class="figure-caption text-center">Set 3, spherical</figcaption></figure></div>
+  </div>
+  <p>
+    Compared with the planar mosaic, the cylinder gives every degree of pan the same width. The right-hand building and crosswalk in set 3 are no longer stretched outward, and the overall shape is a near-rectangle instead of a bow tie. The trade-off is that straight horizontal lines away from the horizon now curve, like the sidewalk edge and the ceiling in the indoor sets, because a cylinder can't keep both those lines and the verticals straight. The sphere also compresses the top and bottom, which the tall portrait photos make noticeable (it is about 650 px shorter). For these 90&ndash;95&deg; horizontal panoramas, the cylinder looks the most natural.
+  </p>
+
+  <!-- ============================== Learned ============================== -->
+  <h2 class="h3 mt-5 mb-3 border-bottom pb-2" id="learned">What I Learned</h2>
+  <p>
+    The most useful lesson was how much depends on getting the geometry exactly right before any blending. A homography that is off by a couple of pixels produces ghosting that no blend can hide, and parallax cannot be fixed by any homography. Blending only hides the small leftover differences: feathering handles exposure, and the two-band split keeps fine detail from ghosting. Each method has its own failure mode, and the close-ups made those easy to see.
+  </p>
+  <p>
+    I was also surprised that a homography is "just" \(K R K^{-1}\) when the camera only rotates. Once I fit the focal length and rotations directly, the same correspondences gave me a camera model good to about 2 px, and the cylindrical and spherical panoramas came almost for free. The inverse-warping loop stays the same and only the function that maps an output pixel to a ray changes.
+  </p>
+</div>

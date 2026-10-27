@@ -230,22 +230,61 @@ layout: home
 
   <!-- ===================================================================== -->
   <h2 class="h3 mt-5 mb-3 border-bottom pb-2" id="a4">A.4: Blending the Images into a Mosaic</h2>
-  <p><strong>Procedure</strong> (one-shot, at half resolution, 1080&times;1920 per photo):</p>
+  <p>
+    Once every photo has a homography into a common frame, making a mosaic has two parts. The <em>geometric</em> part puts every photo in the right place, using the warping from A.3. The <em>photometric</em> part decides what color each canvas pixel gets where two or more photos overlap. Even with perfect alignment, the photos never agree exactly in the overlaps:
+  </p>
+  <ul>
+    <li><strong>Exposure:</strong> the phone meters every shot on its own, so the same wall comes out at different brightness.</li>
+    <li><strong>Vignetting:</strong> lenses darken toward the corners, so a pixel near one photo's edge is darker than the same point near another photo's center.</li>
+    <li><strong>Small misalignments:</strong> a pixel or two of registration error, or parallax from objects close to the camera.</li>
+  </ul>
+  <p>
+    If one photo simply overwrites the next, all of these show up as a hard line along the border of the top photo. The goal of blending is to spread the change from one photo to the next over a wide enough region that the eye doesn't see a line, without blurring or doubling fine detail.
+  </p>
+
+  <p><strong>Procedure.</strong> I use the one-shot approach: first find the size of the final canvas, then warp every photo onto it, then blend the stack. To keep things fast, everything runs at half resolution (1080&times;1920 per photo).</p>
   <ol>
-    <li><strong>Reference frame.</strong> The middle photo stays unwarped; for set 3 it is the mid-left photo. Every other photo is warped straight into its frame. For images that don't overlap the reference directly, I chain the pairwise homographies, e.g. \(H_{\text{right}\to\text{ref}} = H_{\text{mid-right}\to\text{mid-left}}\, H_{\text{right}\to\text{mid-right}}\). Each photo is warped only once.</li>
-    <li><strong>Canvas.</strong> The canvas is the union of all warped bounding boxes. Each warped image keeps its offset in that canvas.</li>
-    <li><strong>Weights.</strong> Each photo gets a "tent" weight, 1 at its center falling linearly to 0 at every edge: \(w(x, y) = (1 - |2x/(W{-}1) - 1|)\,(1 - |2y/(H{-}1) - 1|)\). I append it as an extra channel before warping, so it is warped by exactly the same bilinear lookup as the colors.</li>
-    <li><strong>Exposure.</strong> Starting at the reference and working outward, each image gets a per-channel gain that makes its mean color in the overlap match the images already placed. Sets 1 and 2 only needed gains of 0.92&ndash;1.0. In set 3, night mode exposed the mid-left photo much darker than its neighbors, giving gains of &times;1.4&ndash;1.6 for the left photo and &times;0.8 for the right two.</li>
-    <li><strong>Blend.</strong> I compare three blends:
+    <li>
+      <strong>Reference frame.</strong> The middle photo stays unwarped (for set 3, the mid-left photo), and every other photo is warped into its frame. Picking a photo in the middle keeps the outer photos as close to the reference as possible. This matters because a planar projection stretches an image more the further it is rotated from the reference, and the stretch goes to infinity at 90&deg;. Not every photo overlaps the reference directly, so I chain the pairwise homographies. For example, the rightmost photo in set 3 goes right &rarr; mid-right &rarr; mid-left:
+      \[ H_{\text{right}\to\text{ref}} = H_{\text{mid-right}\to\text{mid-left}}\; H_{\text{right}\to\text{mid-right}} \]
+      Because the homographies are multiplied together first, each photo is resampled only once. Warping the warped image again would blur it a second time.
+    </li>
+    <li><strong>Canvas.</strong> I push each photo's four corners through its homography. The canvas is the union of the resulting bounding boxes: 2403&times;2434, 2361&times;2534 and 2742&times;3012 for the three sets. <code>warpImageBilinear</code> warps each photo into its own bounding box and returns that box's offset, which says where the result sits on the canvas.</li>
+    <li>
+      <strong>Weights.</strong> Each photo gets a weight map that is 1 at its center and falls linearly to 0 at every edge:
+      \[ w(x, y) = \Big(1 - \big|\tfrac{2x}{W-1} - 1\big|\Big)\Big(1 - \big|\tfrac{2y}{H-1} - 1\big|\Big) \]
+      This encodes the idea that a photo is most trustworthy near its center (least vignetting, least lens distortion) and should fade out before its border. At the border, its weight is exactly 0, so its edge can never show up as a line. I use the product of a horizontal and a vertical tent rather than the distance to the nearest edge (<code>bwdist</code>). On a rectangle, the nearest-edge distance has creases along the diagonals, and those creases cause the wedge-shaped artifacts the assignment warns about. The product is smooth everywhere. I append the weight map to the photo as a fourth channel before warping, so it goes through exactly the same bilinear lookup as the colors and stays aligned with them.
+    </li>
+    <li>
+      <strong>Exposure.</strong> Weighted averaging spreads a brightness difference across the overlap, but if the difference is large, a slow gradient across the overlap is still visible. So I first match exposures with a gain per color channel. Starting at the reference (gain 1) and working outward, each new photo \(i\) gets
+      \[ g_i = \frac{\sum_{p \in \text{overlap}} g_j\, I_j(p)}{\sum_{p \in \text{overlap}} I_i(p)} \]
+      Here the sums run over all pixels where photo \(i\) and an already-placed photo \(j\) both have data. This makes photo \(i\)'s mean color in the overlap equal to that of the photos already placed. Sets 1 and 2 needed only small corrections (0.92&ndash;1.0). In set 3, night mode exposed the mid-left photo much darker than its neighbors, which gave gains of &times;1.4&ndash;1.6 for the left photo and &times;0.8 for the right two.
+    </li>
+    <li><strong>Blend.</strong> I compare three ways of combining the stack:
       <ul>
-        <li><em>Overwrite</em> pastes images on top of each other, as a baseline.</li>
-        <li><em>Feather</em> takes the per-pixel weighted average \(\sum_i w_i I_i / \sum_i w_i\).</li>
-        <li><em>Two-band</em> is a 2-level Laplacian pyramid. Each warped image is split into a low band (Gaussian blur, \(\sigma = 6\) px) and a high band (the residual). The low bands are feathered. For the high bands, each pixel takes the image with the largest weight. I blur the low band with a normalized convolution, \(G(\alpha I) / G(\alpha)\), so the black outside each image doesn't bleed in.</li>
+        <li>
+          <em>Overwrite</em> pastes the photos from left to right, each covering the previous one. This is the baseline that shows what goes wrong without blending.
+        </li>
+        <li>
+          <em>Feather</em> sets each canvas pixel to the weighted average of every photo that covers it:
+          \[ I(p) = \frac{\sum_i w_i(p)\, I_i(p)}{\sum_i w_i(p)} \]
+          Dividing by the total weight matters. Where only one photo covers a pixel, the result is just that photo, whatever its weight. In an overlap, the result slides smoothly from one photo to the other as their weights cross. The catch is that the transition is as wide as the overlap, hundreds of pixels. If the photos are off by even a few pixels, every edge in that band shows up twice, faded: <em>ghosting</em>.
+        </li>
+        <li>
+          <em>Two-band</em> fixes this with a 2-level Laplacian pyramid. The idea comes from multiresolution blending in project 2: coarse structure should transition over a wide region, but fine detail should transition over a narrow one. Each warped photo is split into two bands:
+          <ul>
+            <li>a <strong>low band</strong> \(L_i = G_\sigma * I_i\) (Gaussian, \(\sigma = 6\) px), holding brightness, color and large shapes;</li>
+            <li>a <strong>high band</strong> \(H_i = I_i - L_i\), holding edges and texture.</li>
+          </ul>
+          The low bands are feathered exactly as above, so exposure and color still change gradually across the whole overlap. For the high bands, each pixel takes the band from the single photo with the largest weight there (\(\arg\max_i w_i\)), so fine detail is never averaged and can't ghost. The switch happens along the line where two photos' weights are equal, roughly halfway between their centers. The result is \(\text{feather}(L_i) + H_{\arg\max_i w_i}\).
+          <br>
+          One detail: blurring a warped photo naively mixes in the black canvas around it, which would darken its low band near its border and leave a dark halo. Instead, I blur with a normalized convolution, \(L_i = G_\sigma * (\alpha_i I_i) \,/\, G_\sigma * \alpha_i\), using the alpha channel from the warp. This averages only over pixels where the photo has data.
+        </li>
       </ul>
     </li>
   </ol>
   <p>
-    Images are added one at a time into running sums, so memory stays bounded by the canvas.
+    I add the photos one at a time into running sums: \(\sum w_i I_i\), \(\sum w_i\), and for two-band the current best weight with its high band. Memory therefore depends on the canvas size and not on the number of photos.
   </p>
   <div class="row g-3">
     <div class="col-4"><figure class="figure w-100"><img src="{{ site.baseurl }}/img/project4/mosaic2_warped_img2-left.jpg" class="figure-img img-fluid rounded" alt="Lobby left photo warped into the middle photo's frame"><figcaption class="figure-caption text-center">left, warped</figcaption></figure></div>
@@ -284,6 +323,19 @@ layout: home
   </div>
   <p>
     Here exposure is the main problem: overwrite shows hard brightness steps where the photos meet. Gain compensation removes most of the difference, and feathering hides the rest. In this close-up, two-band is actually slightly worse: there is a faint vertical seam to the right of the pole. Night mode denoised each photo differently, so the sidewalk texture is sharper in one photo than the other. Switching the high band abruptly from one image to the next makes that difference visible. The dark smudge by the pole is my own shadow, which moved between shots.
+  </p>
+
+  <h3 class="h4 mt-5 mb-3" id="blend-summary">Which blend works best?</h3>
+  <table class="table table-sm">
+    <thead><tr><th>problem in the overlap</th><th>overwrite</th><th>feather</th><th>two-band</th></tr></thead>
+    <tbody>
+      <tr><td>exposure / vignetting difference</td><td>hard line</td><td>smooth</td><td>smooth (low band is feathered)</td></tr>
+      <tr><td>small misalignment or parallax</td><td>hard line, broken edges</td><td>ghosting (doubled edges)</td><td>sharp, with a narrow cut</td></tr>
+      <tr><td>different sharpness or noise</td><td>hard line</td><td>smooth</td><td>faint texture seam</td></tr>
+    </tbody>
+  </table>
+  <p>
+    No single method wins everywhere, and each one's failure mode follows from how wide its transition is. Overwrite has no transition at all. Feathering uses the whole overlap, which hides exposure differences well but ghosts any misalignment. Two-band picks the width per frequency: wide for brightness and color, a single line for detail. It is the best default when there is any misalignment, as with the parallax in set 1. When the photos are well aligned but were processed differently, as in the night set, plain feathering can look slightly better. The improvements I'd try next are more pyramid levels, so the switch for mid-frequency detail can be a few pixels wide instead of a single line, and choosing the high-band seam along a path where the photos agree (a graph-cut seam), instead of the fixed equal-weight line.
   </p>
 
   <!-- ===================================================================== -->
